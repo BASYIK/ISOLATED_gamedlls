@@ -987,8 +987,6 @@ void V_CalcFirstPersonRefdef( struct ref_params_s *pparams )
 	// smooth player view in multiplayer
 	V_InterpolatePos( pparams );
 
-	// update flashlight state
-	g_PlayerFlashlight.Update(pparams);
 }
 
 //==========================

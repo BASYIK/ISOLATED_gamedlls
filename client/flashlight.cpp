@@ -22,7 +22,7 @@ void CPlayerFlashlight::TurnOff()
 {
     m_Active = false;
 }
-
+#if 0
 void CPlayerFlashlight::Update(ref_params_t *pparams)
 {
 	if (!m_Active)
@@ -76,3 +76,4 @@ void CPlayerFlashlight::Update(ref_params_t *pparams)
 		flashlight2->die = pparams->time + 0.01f;
 	}
 }
+#endif

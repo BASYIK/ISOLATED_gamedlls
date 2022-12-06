@@ -45,7 +45,7 @@ public:
 	int			type;				// light type
 	int			lightstyleIndex;
 	bool		update;				// light needs update
-
+	int			dontdrawplayershadow; // BASYIK: for flashlight.
 	matrix4x4		viewMatrix;
 	matrix4x4		projectionMatrix;			// light projection matrix
 	matrix4x4		modelviewMatrix;			// light modelview

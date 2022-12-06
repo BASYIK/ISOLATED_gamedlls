@@ -389,7 +389,8 @@ static void R_ShadowPassSetupViewCache( CDynLight *pl, int split = 0 )
 		switch( RI->currentmodel->type )
 		{
 		case mod_studio:
-			R_AddStudioToDrawList( RI->currententity );
+			if (!pl->dontdrawplayershadow == 1)
+				R_AddStudioToDrawList(RI->currententity);
 			break;
 		case mod_brush:
 			R_MarkSubmodelVisibleFaces();

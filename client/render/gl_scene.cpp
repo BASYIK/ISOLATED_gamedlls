@@ -528,6 +528,60 @@ qboolean R_AddEntity( struct cl_entity_s *clent, int entityType )
 		R_UpdateCinSound( clent );
 	}
 
+	if (clent->curstate.effects & EF_DIMLIGHT)
+	{
+		static float add = 0.0f;
+		float addideal = 0.0f;
+		pmtrace_t ptr;
+
+		Vector origin, vecEnd, angles;
+		Vector forward, right, up;
+
+		if (UTIL_IsLocal(clent->index))
+		{
+			gEngfuncs.GetViewAngles(angles);
+			gEngfuncs.pfnAngleVectors(angles, forward, right, up);
+			origin = clent->curstate.origin + Vector(0.0f, 0.0f, 6.0f) + (right * 5.0f) + (forward * 2.0f);
+			vecEnd = origin + (forward * 700.0f);
+		}
+		else
+		{
+			origin = clent->curstate.origin;
+			angles = clent->angles;
+			angles.x = -angles.x * 3;
+			gEngfuncs.pfnAngleVectors(angles, forward, right, up);
+			vecEnd = origin + (forward * 700.0f);
+		}
+
+		gEngfuncs.pEventAPI->EV_SetTraceHull(2);
+		gEngfuncs.pEventAPI->EV_PlayerTrace(origin, vecEnd, 0x00000000, -1, &ptr);
+		const char* texName = gEngfuncs.pEventAPI->EV_TraceTexture(ptr.ent, origin, vecEnd);
+
+		if (ptr.fraction < 1.0f)
+			addideal = (1.0f - ptr.fraction) * 30.0f;
+		float speed = (add - addideal) * 10.0f;
+		if (speed < 0) speed *= -1.0f;
+
+		if (add < addideal)
+		{
+			add += GET_FRAMETIME() * speed;
+			if (add > addideal) add = addideal;
+		}
+		else if (add > addideal)
+		{
+			add -= GET_FRAMETIME() * speed;
+			if (add < addideal) add = addideal;
+		}
+		CDynLight* flashlight = CL_AllocDlight(clent->index);
+
+		R_SetupLightParams(flashlight, origin, angles, 700.0f, 35.0f + add, LIGHT_SPOT);
+		R_SetupLightTexture(flashlight, tr.flashlightTexture);
+
+		flashlight->color = Vector(1.4f, 1.4f, 1.4f); // make model dymanic lighting happy
+		flashlight->die = tr.time + 0.05f;
+		flashlight->dontdrawplayershadow = 1;
+	}
+
 	clent->curstate.renderamt = R_ComputeFxBlend( clent );
 
 	if( !R_OpaqueEntity( clent ))
