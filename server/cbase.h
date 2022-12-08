@@ -152,6 +152,10 @@ public:
 	entvars_t		*pev;		// Don't need to save/restore this pointer, the engine resets it
 
 	DECLARE_DATADESC();
+	bool CheckingLocalMove;
+
+	virtual bool HasSpawnFlags(int nFlags) const;
+	virtual void SetNullModel(void);
 
 	// path corners
 	CBaseEntity	*m_pGoalEnt;	// path corner we are heading towards
@@ -504,6 +508,7 @@ public:
 	void SUB_CallUseToggle( void ) { this->Use( this, this, USE_TOGGLE, 0 ); }
 	int ShouldToggle( USE_TYPE useType, BOOL currentState );
 	void FireBullets( ULONG cShots, Vector vecSrc, Vector vecDirShooting,	Vector vecSpread, float flDistance, int iBulletType, int iTracerFreq = 4, int iDamage = 0, entvars_t *pevAttacker = nullptr);
+	Vector		FireBulletsPlayer(ULONG	cShots, Vector  vecSrc, Vector	vecDirShooting, Vector	vecSpread, float flDistance, int iBulletType, int iTracerFreq = 4, int iDamage = 0, entvars_t* pevAttacker = NULL, int shared_rand = 0);
 	void Teleport( const Vector *newPosition, const Vector *newAngles, const Vector *newVelocity );
 	void GetVectors( Vector *pForward, Vector *pRight, Vector *pUp ) const;
 
@@ -906,6 +911,7 @@ public:
 	virtual void HandleAnimEvent( MonsterEvent_t *pEvent ) { return; };
 	float SetBoneController ( int iController, float flValue );
 	void InitBoneControllers ( void );
+	float GetControllerBound(int iController);
 	float SetBlending ( int iBlender, float flValue );
 	void GetBonePosition ( int iBone, Vector &origin, Vector &angles );
 	void GetAutomovement( Vector &origin, Vector &angles, float flInterval = 0.1 );
@@ -1012,6 +1018,8 @@ public:
 #define bits_CAP_MELEE_ATTACK1	( 1 << 13) // can do a melee attack 1
 #define bits_CAP_MELEE_ATTACK2	( 1 << 14) // can do a melee attack 2
 #define bits_CAP_FLY		( 1 << 15) // can fly, move all around
+#define bits_CAP_CROUCH_COVER	( 1 << 16)// buz
+
 
 #define bits_CAP_DOORS_GROUP		(bits_CAP_USE | bits_CAP_AUTO_DOORS | bits_CAP_OPEN_DOORS)
 
@@ -1117,6 +1125,17 @@ typedef struct _SelAmmo
 	BYTE	Ammo2Type;
 	BYTE	Ammo2;
 } SelAmmo;
+
+
+inline bool CBaseEntity::HasSpawnFlags(int nFlags) const
+{
+	return (pev->spawnflags & nFlags) != 0;
+}
+
+inline void CBaseEntity::SetNullModel(void)
+{
+	SET_MODEL(edict(), "sprites/null.spr");
+}
 
 // this moved here from world.cpp, to allow classes to be derived from it
 //=======================

@@ -1,4 +1,4 @@
-/***
+﻿/***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
@@ -308,6 +308,23 @@ void CGameRules::RefreshSkillData ( void )
 	gSkillData.plrStomach = GetSkillCvar( "sk_player_stomach" );
 	gSkillData.plrLeg = GetSkillCvar( "sk_player_leg" );
 	gSkillData.plrArm = GetSkillCvar( "sk_player_arm" );
+
+	//basyik 
+
+	// buz: maxspeeds
+	gSkillData.plrPrimaryMaxSpeed = GetSkillCvar("sk_primary_speed");
+	gSkillData.plrSecondaryMaxSpeed = GetSkillCvar("sk_secondary_speed");
+	// Wargon: looting
+	gSkillData.maxDeadEnemyAmmo = GetSkillCvar("sk_dead_enemy_ammo");
+
+	// buz: paranoia weapons
+	gSkillData.plrDmgAps = GetSkillCvar("sk_plr_aps");
+	gSkillData.plrDmgBarret = GetSkillCvar("sk_plr_barret");
+	gSkillData.plrDmgAks = GetSkillCvar("sk_plr_aks");
+	gSkillData.plrDmgAk47 = GetSkillCvar("sk_plr_ak47");
+	gSkillData.plrDmgAsval = GetSkillCvar("sk_plr_asval");
+	gSkillData.plrDmgRpk = GetSkillCvar("sk_plr_rpk");
+	gSkillData.plrDmgGroza = GetSkillCvar("sk_plr_groza");
 }
 
 //=========================================================

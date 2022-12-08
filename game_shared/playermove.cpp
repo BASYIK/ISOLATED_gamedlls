@@ -857,8 +857,8 @@ void PM_WalkMove( void )
 	wishvel[2] = 0;             // Zero out z part of velocity
 
 	wishdir = wishvel;		// determine maginitude of speed of move
-	wishspeed = wishdir.Length();
 	wishdir = wishdir.Normalize();
+	wishspeed = wishspeed * pmove->clientmaxspeed / (float)100;
 
 //
 // Clamp to server defined max speed
@@ -1130,6 +1130,7 @@ void PM_WaterMove (void)
 	wishdir = wishvel;
 	wishspeed = wishdir.Length();
 	wishdir = wishdir.Normalize();
+	wishspeed = wishspeed * pmove->clientmaxspeed / (float)100;
 
 	// Cap speed.
 	if (wishspeed > pmove->maxspeed)
@@ -1233,6 +1234,7 @@ void PM_AirMove (void)
 	wishdir = wishvel;		// determine maginitude of speed of move
 	wishspeed = wishdir.Length();
 	wishdir = wishdir.Normalize();
+	wishspeed = wishspeed * pmove->clientmaxspeed / (float)100;
 
 	// Clamp to server defined max speed
 	if (wishspeed > pmove->maxspeed)
@@ -2332,6 +2334,8 @@ void PM_Jump (void)
 	}
 	else
 	{
+		int jumpheight = atoi(pmove->PM_Info_ValueForKey(pmove->physinfo, "jh"));
+		pmove->velocity[2] = sqrt(2 * (800 / 100) * jumpheight * 45.0);
 		pmove->velocity[2] = sqrt(2 * 800 * 45.0);
 	}
 
@@ -2458,6 +2462,8 @@ void PM_CheckFalling( void )
 
 		if ( fvol > 0.0 )
 		{
+			float punch;
+
 			// Play landing step right away
 			pmove->flTimeStepSound = 0;
 			
@@ -2467,12 +2473,13 @@ void PM_CheckFalling( void )
 			PM_PlayStepSound( STEP_MATERIAL, fvol );
 
 			// Knock the screen around a little bit, temporary effect
-			pmove->punchangle[ 2 ] = pmove->flFallVelocity * 0.013;	// punch z axis
-
-			if ( pmove->punchangle[ 0 ] > 8 )
-			{
-				pmove->punchangle[ 0 ] = 8;
-			}
+			
+			// buz: new punch system
+			punch = (pmove->flFallVelocity > 700 ? 700 : pmove->flFallVelocity) * 0.42;
+		//	pmove->Con_DPrintf("fall vel: %f, punch: %f\n", pmove->flFallVelocity, punch/20);
+			pmove->vuser3[0] += punch;
+			pmove->vuser3[1] += pmove->RandomFloat(punch/-10, punch/10);
+			pmove->vuser3[2] += pmove->RandomFloat(punch/-10, punch/10);
 		}
 	}
 
@@ -2585,11 +2592,11 @@ void PM_CheckParamters( void )
 		  ( pmove->cmd.upmove * pmove->cmd.upmove );
 	spd = sqrt( spd );
 
-	maxspeed = pmove->clientmaxspeed; //atof( pmove->PM_Info_ValueForKey( pmove->physinfo, "maxspd" ) );
-	if ( maxspeed != 0.0 )
-	{
-		pmove->maxspeed = min( maxspeed, pmove->maxspeed );
-	}
+	//maxspeed = pmove->clientmaxspeed; //atof( pmove->PM_Info_ValueForKey( pmove->physinfo, "maxspd" ) );
+	///if ( maxspeed != 0.0 )
+	//{
+	////	pmove->maxspeed = min( maxspeed, pmove->maxspeed );
+	///}
 
 	if ( ( spd != 0.0 ) &&
 		 ( spd > pmove->maxspeed ) )

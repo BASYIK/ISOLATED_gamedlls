@@ -150,6 +150,20 @@ BEGIN_DATADESC( CBasePlayer )
 	DEFINE_AUTO_ARRAY( m_szAnimExtention, FIELD_CHARACTER ),
 	DEFINE_FUNCTION( PlayerDeathThink ),
 	DEFINE_FIELD( m_iSndRoomtype, FIELD_INTEGER ),
+
+	// BASYIK
+
+	// buz
+//	DEFINE_FIELD( CBasePlayer, m_iHasGasMask, FIELD_INTEGER ),
+DEFINE_FIELD(m_iGasMaskOn, FIELD_INTEGER),
+DEFINE_FIELD(m_flGasMaskTime, FIELD_TIME),
+
+DEFINE_FIELD(m_iHeadShieldOn, FIELD_INTEGER),
+
+DEFINE_FIELD(m_iJumpHeight, FIELD_INTEGER), 
+
+
+	// end
 END_DATADESC()	
 
 
@@ -204,6 +218,9 @@ int gmsgRainData = 0;
 int gmsgStatusIcon = 0;
 int gmsgSetupBones = 0;
 int gmsgPostFxSettings = 0;
+
+int gmsgGasMask = 0; // buz
+int gmsgHeadShield = 0; // buz
 
 void LinkUserMessages( void )
 {
@@ -260,6 +277,10 @@ void LinkUserMessages( void )
 	gmsgStatusIcon = REG_USER_MSG( "StatusIcon", -1 );
 	gmsgSetupBones = REG_USER_MSG( "SetupBones", -1 );
 	gmsgPostFxSettings = REG_USER_MSG("PostFxSettings", -1);
+
+	gmsgGasMask = REG_USER_MSG("GasMask", 1); // buz
+	gmsgHeadShield = REG_USER_MSG("HeadShield", 1); // buz
+
 }
 
 LINK_ENTITY_TO_CLASS( player, CBasePlayer );
@@ -444,6 +465,10 @@ int CBasePlayer :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, 
 	flBonus = ARMOR_BONUS;
 	flRatio = ARMOR_RATIO;
 
+	// buz: refuse gas damage while wearing gasmask
+	if (m_iGasMaskOn && (bitsDamageType & DMG_NERVEGAS))
+		return 0;
+
 	if ( ( bitsDamageType & DMG_BLAST ) && g_pGameRules->IsMultiplayer() )
 	{
 		// blasts damage armor more.
@@ -455,7 +480,41 @@ int CBasePlayer :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, 
 		return 0;
 	// go take the damage first
 
-	
+		// buz: new punch system
+	if (bitsDamage & (DMG_BULLET | DMG_BLAST) && pevInflictor && pevInflictor != pev)
+	{
+		float punch, pmax, divide;
+
+		if (bitsDamage & DMG_BLAST)
+		{
+			pmax = CVAR_GET_FLOAT("blast_punch_max");
+			divide = CVAR_GET_FLOAT("blast_punch_divide");
+		}
+		else
+		{
+			pmax = CVAR_GET_FLOAT("bullet_punch_max");
+			divide = CVAR_GET_FLOAT("bullet_punch_divide");
+		}
+
+		if (divide == 0) divide = 1;
+
+		punch = (flDamage > pmax ? pmax : flDamage) / divide;
+		Vector to = pevInflictor->origin - pev->origin;
+		to.z = 0;
+		to = to.Normalize();
+		Vector tempAngle = Vector(0, pev->v_angle.y, 0);
+		UTIL_MakeVectors(tempAngle);
+
+		ViewPunch(DotProduct(gpGlobals->v_forward, to) * punch,
+			DotProduct(gpGlobals->v_right, to) * punch,
+			DotProduct(gpGlobals->v_right, to) * punch);
+	}
+	else
+	{
+		//	pev->punchangle.x = -2; // old punchangle
+		ViewPunch(1, 0, 0);
+	}
+
 	CBaseEntity *pAttacker = CBaseEntity::Instance(pevAttacker);
 
 	if ( !g_pGameRules->FPlayerCanTakeDamage( this, pAttacker ) )
@@ -2971,6 +3030,17 @@ void CBasePlayer::Spawn( void )
 	m_flRainEndFade = 0;
 	m_flRainNextFadeUpdate = 0;
 
+	m_iGasMaskOn = 0;
+	m_flGasMaskTime = 0;
+	SetJumpHeight(100);
+	m_iUpdateGasMask = 1; // buz
+	m_iUpdateHeadShield = 2; // buz - 2 is turn on immediatly
+	m_iLastGasMaskSound = 1;
+
+	// buz: Paranoia's speed adjustment
+	pev->maxspeed = gSkillData.plrPrimaryMaxSpeed;
+
+
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "slj", "0" );
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "hl", "1" );
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "incar", "0" );
@@ -3048,6 +3118,15 @@ void CBasePlayer::Spawn( void )
 
 	// create a cinematic collision box
 	m_pUserData = WorldPhysic->CreateBoxFromEntity( this );
+}
+
+// buz
+void CBasePlayer::ViewPunch(float p, float y, float r)
+{
+	// vuser3 is punch speed
+	pev->vuser3[0] -= p * 20;
+	pev->vuser3[1] += y * 20;
+	pev->vuser3[2] += r * 20;
 }
 
 void CBasePlayer :: CheckCompatibility( void )
@@ -3351,6 +3430,8 @@ int CBasePlayer::Restore( CRestore &restore )
 	{
 		g_engfuncs.pfnSetPhysicsKeyValue( edict(), "slj", "0" );
 	}
+	// buz: restore jump height
+	SetJumpHeight(m_iJumpHeight);
 
 	g_engfuncs.pfnSetPhysicsKeyValue( edict(), "incar", va( "%d", m_iInCarState ));
 
@@ -3783,6 +3864,9 @@ void CBasePlayer::ImpulseCommands( )
 		{
 			FlashlightTurnOn();
 		}
+		break;
+	case	198: // gasmask
+		ToggleGasMask();
 		break;
 	case 201:// paint decal
 		if ( gpGlobals->time < m_flNextDecalTime )
@@ -4315,6 +4399,48 @@ void CBasePlayer :: UpdateClientData( void )
 		WRITE_BYTE( 0 );
 		MESSAGE_END();
 		gDisplayTitle = 0;
+	}
+
+	// buz: update gasmask
+	if (m_iUpdateGasMask)
+	{
+		MESSAGE_BEGIN(MSG_ONE, gmsgGasMask, NULL, pev);
+		WRITE_BYTE(m_iGasMaskOn);
+		MESSAGE_END();
+
+		m_iUpdateGasMask = 0;
+	}
+
+	// buz: update head shield
+	// 0 off, 1 on, 2 fast on
+	if (m_iUpdateHeadShield)
+	{
+		if (m_iUpdateHeadShield == 2)
+		{
+			if (m_iHeadShieldOn)
+			{
+				MESSAGE_BEGIN(MSG_ONE, gmsgHeadShield, NULL, pev);
+				WRITE_BYTE(2);
+				MESSAGE_END();
+			}
+			// dont send "fast off" update, because client sets it by default
+		}
+		else
+		{
+			if (m_iHeadShieldOn)
+			{
+				MESSAGE_BEGIN(MSG_ONE, gmsgHeadShield, NULL, pev);
+				WRITE_BYTE(1);
+				MESSAGE_END();
+			}
+			else
+			{
+				MESSAGE_BEGIN(MSG_ONE, gmsgHeadShield, NULL, pev);
+				WRITE_BYTE(0);
+				MESSAGE_END();
+			}
+		}
+		m_iUpdateHeadShield = 0;
 	}
 
 	if (m_iStartMessage != 0)
@@ -5512,4 +5638,108 @@ void CHudSprite :: Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 		WRITE_BYTE( pev->rendercolor.y );
 		WRITE_BYTE( pev->rendercolor.z );
 	MESSAGE_END();
+}
+
+// buz: set jump height function
+void CBasePlayer::SetJumpHeight(int value)
+{
+	m_iJumpHeight = value;
+	char buf[16];
+	itoa(m_iJumpHeight, buf, 10);
+	g_engfuncs.pfnSetPhysicsKeyValue(edict(), "jh", buf);
+	//	ALE
+}
+
+
+// buz: gasmask turn on/off
+void CBasePlayer::ToggleGasMask(void)
+{
+	//	if (!m_iHasGasMask || pev->waterlevel == 3)
+	if (!(pev->weapons & (1 << WEAPON_GASMASK)) || pev->waterlevel == 3)
+		return; // no gasmask
+
+	if (gpGlobals->time < m_flGasMaskTime)
+		return; // not too fast
+
+	if (m_iGasMaskOn)
+	{
+		EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, SOUND_GASMASK_OFF, 1.0, ATTN_NORM, 0, PITCH_NORM);
+		m_iGasMaskOn = 0;
+		pev->body = 0;
+		// stop last sound
+		char sz[128];
+		sprintf(sz, "items/gasm_breath%i.wav", m_iLastGasMaskSound);
+		STOP_SOUND(ENT(pev), CHAN_VOICE, sz);
+		//		ALERT(at_console, "gasmask off\n");
+	}
+	else
+	{
+		if (m_pActiveItem && m_pActiveItem->GetMode() == 3)
+		{
+			UTIL_ShowMessage("#GAS_AND_SCOPE", this);
+			return;
+			//	CBasePlayerWeapon *pWpn = (CBasePlayerWeapon *)m_pActiveItem->GetWeaponPtr();
+			//	if ( pWpn )	pWpn->SecondaryAttack(); // remove scope
+			//	else ALERT(at_error, "Unexpected player item!\n");
+		}
+		if (m_iHeadShieldOn)
+		{
+			UTIL_ShowMessage("#GAS_AND_SHIELD", this);
+			return;
+			//	ToggleHeadShield(); // turn off shield
+		}
+		pev->body = 2;
+
+		EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, SOUND_GASMASK_ON, 1.0, ATTN_NORM, 0, PITCH_NORM);
+		m_iGasMaskOn = 1;
+		m_flNextBreathTime = gpGlobals->time + 3;
+
+		//		ALERT(at_console, "gasmask on\n");
+	}
+
+	m_flGasMaskTime = gpGlobals->time + 0.5;
+	m_iUpdateGasMask = 1;
+}
+
+// buz: head shield turn on/off
+void CBasePlayer::ToggleHeadShield(void)
+{
+	if (!(pev->weapons & (1 << WEAPON_HEADSHIELD)))
+		return; // no shield
+
+	if (gpGlobals->time < m_flHeadShieldTime)
+		return; // not too fast
+
+	if (m_iHeadShieldOn)
+	{
+		m_iHeadShieldOn = 0;
+		EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, SOUND_SHIELD_OFF, 1.0, ATTN_NORM, 0, PITCH_NORM);
+		pev->body = 0;
+		//		ALERT(at_console, "head shield off\n");
+	}
+	else
+	{
+		if (m_pActiveItem && m_pActiveItem->GetMode() == 3)
+		{
+			UTIL_ShowMessage("#SCOPE_AND_SHIELD", this);
+			return;
+			//	CBasePlayerWeapon *pWpn = (CBasePlayerWeapon *)m_pActiveItem->GetWeaponPtr();
+			//	if ( pWpn )	pWpn->SecondaryAttack(); // remove scope
+			//	else ALERT(at_error, "Unexpected player item!\n");
+		}
+		if (m_iGasMaskOn)
+		{
+			UTIL_ShowMessage("#GAS_AND_SHIELD", this);
+			return;
+			//	ToggleGasMask();
+		}
+		EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, SOUND_SHIELD_ON, 1.0, ATTN_NORM, 0, PITCH_NORM);
+		m_iHeadShieldOn = 1;
+		pev->body = 1;
+
+		//		ALERT(at_console, "head shield on\n");
+	}
+
+	m_flHeadShieldTime = gpGlobals->time + 0.5;
+	m_iUpdateHeadShield = 1;
 }

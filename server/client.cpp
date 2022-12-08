@@ -1642,6 +1642,29 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 	cd->weaponanim		= ent->v.weaponanim;
 
 	cd->pushmsec		= ent->v.pushmsec;
+
+
+	// buz: send spread angle value
+
+	entvars_t* pev = (entvars_t*)&ent->v;
+	CBasePlayer* pl = (CBasePlayer*)CBasePlayer::Instance(pev);
+	if (pl && pl->m_pActiveItem)
+	{
+		Vector vecSpread = pl->m_pActiveItem->GetSpreadVec();
+		// buz: spread is very small value to send it on network directly
+		vecSpread = vecSpread * 500;
+		cd->vuser1 = vecSpread;
+
+		// buz: send gun mode for hud indication
+		cd->vuser2.x = pl->m_pActiveItem->GetMode();
+
+	}
+	else
+	{
+		cd->vuser1 = Vector(0, 0, 0);
+		cd->vuser2.x = 0;
+	}
+
 }
 
 /*

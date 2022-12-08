@@ -532,8 +532,10 @@ public:
 	Vector m_vecOrigin;
 	Vector m_vecAngles;
 	int m_iKeyBits;
+	cvar_t* m_pZoomSpeed; // buz
 	int m_iHideHUDDisplay;
 	int m_iFOV;
+	float	m_flFOV; // buz - that's my FOV!
 	int m_Teamplay;
 	int m_iRes;
 	cvar_t *m_pCvarDraw;

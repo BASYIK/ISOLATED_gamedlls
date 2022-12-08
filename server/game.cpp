@@ -1,4 +1,4 @@
-/***
+﻿/***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
@@ -457,6 +457,143 @@ cvar_t	sk_player_arm3	= { "sk_player_arm3","1" };
 cvar_t	sk_player_leg1	= { "sk_player_leg1","1" };
 cvar_t	sk_player_leg2	= { "sk_player_leg2","1" };
 cvar_t	sk_player_leg3	= { "sk_player_leg3","1" };
+
+//basyik
+
+// buz
+cvar_t	sk_bighealthkit1 = { "sk_bighealthkit1","0" };
+cvar_t	sk_bighealthkit2 = { "sk_bighealthkit2","0" };
+cvar_t	sk_bighealthkit3 = { "sk_bighealthkit3","0" };
+
+cvar_t	sk_painkiller1 = { "sk_painkiller1","0" };
+cvar_t	sk_painkiller2 = { "sk_painkiller2","0" };
+cvar_t	sk_painkiller3 = { "sk_painkiller3","0" };
+
+cvar_t	sk_zombie_head1 = { "sk_zombie_head1","2" };
+cvar_t	sk_zombie_head2 = { "sk_zombie_head2","2" };
+cvar_t	sk_zombie_head3 = { "sk_zombie_head3","2" };
+
+cvar_t	sk_zombie_chest1 = { "sk_zombie_chest1","1" };
+cvar_t	sk_zombie_chest2 = { "sk_zombie_chest2","1" };
+cvar_t	sk_zombie_chest3 = { "sk_zombie_chest3","1" };
+
+cvar_t	sk_zombie_stomach1 = { "sk_zombie_stomach1","1" };
+cvar_t	sk_zombie_stomach2 = { "sk_zombie_stomach2","1" };
+cvar_t	sk_zombie_stomach3 = { "sk_zombie_stomach3","1" };
+
+cvar_t	sk_zombie_arm1 = { "sk_zombie_arm1","1" };
+cvar_t	sk_zombie_arm2 = { "sk_zombie_arm2","1" };
+cvar_t	sk_zombie_arm3 = { "sk_zombie_arm3","1" };
+
+cvar_t	sk_zombie_leg1 = { "sk_zombie_leg1","1" };
+cvar_t	sk_zombie_leg2 = { "sk_zombie_leg2","1" };
+cvar_t	sk_zombie_leg3 = { "sk_zombie_leg3","1" };
+
+// buz: paranoia cvars
+cvar_t	sk_primary_speed1 = { "sk_primary_speed1","1" };
+cvar_t	sk_primary_speed2 = { "sk_primary_speed2","1" };
+cvar_t	sk_primary_speed3 = { "sk_primary_speed3","1" };
+
+cvar_t	sk_secondary_speed1 = { "sk_secondary_speed1","1" };
+cvar_t	sk_secondary_speed2 = { "sk_secondary_speed2","1" };
+cvar_t	sk_secondary_speed3 = { "sk_secondary_speed3","1" };
+
+// buz: paranoia aps
+cvar_t	sk_plr_aps1 = { "sk_plr_aps1","0" };
+cvar_t	sk_plr_aps2 = { "sk_plr_aps2","0" };
+cvar_t	sk_plr_aps3 = { "sk_plr_aps3","0" };
+
+// buz: paranoia barret
+cvar_t	sk_plr_barret1 = { "sk_plr_barret1","0" };
+cvar_t	sk_plr_barret2 = { "sk_plr_barret2","0" };
+cvar_t	sk_plr_barret3 = { "sk_plr_barret3","0" };
+
+// buz: paranoia aks
+cvar_t	sk_plr_aks1 = { "sk_plr_aks1","0" };
+cvar_t	sk_plr_aks2 = { "sk_plr_aks2","0" };
+cvar_t	sk_plr_aks3 = { "sk_plr_aks3","0" };
+
+// buz: paranoia ak47
+cvar_t	sk_plr_ak471 = { "sk_plr_ak471","0" };
+cvar_t	sk_plr_ak472 = { "sk_plr_ak472","0" };
+cvar_t	sk_plr_ak473 = { "sk_plr_ak473","0" };
+
+// buz: paranoia asval
+cvar_t	sk_plr_asval1 = { "sk_plr_asval1","0" };
+cvar_t	sk_plr_asval2 = { "sk_plr_asval2","0" };
+cvar_t	sk_plr_asval3 = { "sk_plr_asval3","0" };
+
+// buz: paranoia groza
+cvar_t	sk_plr_groza1 = { "sk_plr_groza1","0" };
+cvar_t	sk_plr_groza2 = { "sk_plr_groza2","0" };
+cvar_t	sk_plr_groza3 = { "sk_plr_groza3","0" };
+
+// buz: paranoia aps
+cvar_t	sk_plr_rpk1 = { "sk_plr_rpk1","0" };
+cvar_t	sk_plr_rpk2 = { "sk_plr_rpk2","0" };
+cvar_t	sk_plr_rpk3 = { "sk_plr_rpk3","0" };
+
+// paranoia monster's AK
+cvar_t	sk_ak_bullet1 = { "sk_ak_bullet1","0" };
+cvar_t	sk_ak_bullet2 = { "sk_ak_bullet2","0" };
+cvar_t	sk_ak_bullet3 = { "sk_ak_bullet3","0" };
+
+cvar_t	sk_asval_bullet1 = { "sk_asval_bullet1","0" };
+cvar_t	sk_asval_bullet2 = { "sk_asval_bullet2","0" };
+cvar_t	sk_asval_bullet3 = { "sk_asval_bullet3","0" };
+
+cvar_t	sk_groza_bullet1 = { "sk_groza_bullet1","0" };
+cvar_t	sk_groza_bullet2 = { "sk_groza_bullet2","0" };
+cvar_t	sk_groza_bullet3 = { "sk_groza_bullet3","0" };
+
+cvar_t	sk_ter_rpk_bullet1 = { "sk_ter_rpk_bullet1","0" };
+cvar_t	sk_ter_rpk_bullet2 = { "sk_ter_rpk_bullet2","0" };
+cvar_t	sk_ter_rpk_bullet3 = { "sk_ter_rpk_bullet3","0" };
+
+cvar_t	sk_ter_ak_bullet1 = { "sk_ter_ak_bullet1","0" };
+cvar_t	sk_ter_ak_bullet2 = { "sk_ter_ak_bullet2","0" };
+cvar_t	sk_ter_ak_bullet3 = { "sk_ter_ak_bullet3","0" };
+
+cvar_t	sk_glock_bullet1 = { "sk_glock_bullet1","0" };
+cvar_t	sk_glock_bullet2 = { "sk_glock_bullet2","0" };
+cvar_t	sk_glock_bullet3 = { "sk_glock_bullet3","0" };
+
+cvar_t	sk_mil_kick1 = { "sk_mil_kick1","0" };
+cvar_t	sk_mil_kick2 = { "sk_mil_kick2","0" };
+cvar_t	sk_mil_kick3 = { "sk_mil_kick3","0" };
+
+cvar_t	sk_mil_health1 = { "sk_mil_health1","0" };
+cvar_t	sk_mil_health2 = { "sk_mil_health2","0" };
+cvar_t	sk_mil_health3 = { "sk_mil_health3","0" };
+
+cvar_t	sk_alpha_health1 = { "sk_alpha_health1","0" };
+cvar_t	sk_alpha_health2 = { "sk_alpha_health2","0" };
+cvar_t	sk_alpha_health3 = { "sk_alpha_health3","0" };
+
+cvar_t	sk_terror_health1 = { "sk_terror_health1","0" };
+cvar_t	sk_terror_health2 = { "sk_terror_health2","0" };
+cvar_t	sk_terror_health3 = { "sk_terror_health3","0" };
+
+cvar_t	sk_clone_health1 = { "sk_clone_health1","0" };
+cvar_t	sk_clone_health2 = { "sk_clone_health2","0" };
+cvar_t	sk_clone_health3 = { "sk_clone_health3","0" };
+
+cvar_t	sk_clone_health_heavy1 = { "sk_clone_health_heavy1","0" };
+cvar_t	sk_clone_health_heavy2 = { "sk_clone_health_heavy2","0" };
+cvar_t	sk_clone_health_heavy3 = { "sk_clone_health_heavy3","0" };
+
+// buz: damage punch settings
+cvar_t	bullet_punch_max = { "bullet_punch_max","20" };
+cvar_t	bullet_punch_divide = { "bullet_punch_divide","8" };
+
+cvar_t	blast_punch_max = { "blast_punch_max","100" };
+cvar_t	blast_punch_divide = { "blast_punch_divide","5" };
+
+// Wargon: ������� �� ������� ������. (1.1)
+cvar_t	sk_dead_enemy_ammo1 = { "sk_dead_enemy_ammo1","0" };
+cvar_t	sk_dead_enemy_ammo2 = { "sk_dead_enemy_ammo2","0" };
+cvar_t	sk_dead_enemy_ammo3 = { "sk_dead_enemy_ammo3","0" };
+
 
 // END Cvars for Skill Level settings
 
@@ -940,6 +1077,126 @@ void GameDLLInit( void )
 	CVAR_REGISTER ( &sk_player_leg1 );
 	CVAR_REGISTER ( &sk_player_leg2 );
 	CVAR_REGISTER ( &sk_player_leg3 );
+
+	CVAR_REGISTER(&sk_zombie_head1);
+	CVAR_REGISTER(&sk_zombie_head2);
+	CVAR_REGISTER(&sk_zombie_head3);
+
+	CVAR_REGISTER(&sk_zombie_chest1);
+	CVAR_REGISTER(&sk_zombie_chest2);
+	CVAR_REGISTER(&sk_zombie_chest3);
+
+	CVAR_REGISTER(&sk_zombie_stomach1);
+	CVAR_REGISTER(&sk_zombie_stomach2);
+	CVAR_REGISTER(&sk_zombie_stomach3);
+
+	CVAR_REGISTER(&sk_zombie_arm1);
+	CVAR_REGISTER(&sk_zombie_arm2);
+	CVAR_REGISTER(&sk_zombie_arm3);
+
+	CVAR_REGISTER(&sk_zombie_leg1);
+	CVAR_REGISTER(&sk_zombie_leg2);
+	CVAR_REGISTER(&sk_zombie_leg3);
+
+	// buz: paranoia entries
+	CVAR_REGISTER(&sk_primary_speed1);
+	CVAR_REGISTER(&sk_primary_speed2);
+	CVAR_REGISTER(&sk_primary_speed3);
+
+	CVAR_REGISTER(&sk_secondary_speed1);
+	CVAR_REGISTER(&sk_secondary_speed2);
+	CVAR_REGISTER(&sk_secondary_speed3);
+
+	CVAR_REGISTER(&sk_plr_aps1);
+	CVAR_REGISTER(&sk_plr_aps2);
+	CVAR_REGISTER(&sk_plr_aps3);
+
+	CVAR_REGISTER(&sk_plr_barret1);
+	CVAR_REGISTER(&sk_plr_barret2);
+	CVAR_REGISTER(&sk_plr_barret3);
+
+	CVAR_REGISTER(&sk_plr_aks1);
+	CVAR_REGISTER(&sk_plr_aks2);
+	CVAR_REGISTER(&sk_plr_aks3);
+
+	CVAR_REGISTER(&sk_plr_ak471);
+	CVAR_REGISTER(&sk_plr_ak472);
+	CVAR_REGISTER(&sk_plr_ak473);
+
+	CVAR_REGISTER(&sk_plr_asval1);
+	CVAR_REGISTER(&sk_plr_asval2);
+	CVAR_REGISTER(&sk_plr_asval3);
+
+	CVAR_REGISTER(&sk_plr_groza1);
+	CVAR_REGISTER(&sk_plr_groza2);
+	CVAR_REGISTER(&sk_plr_groza3);
+
+	CVAR_REGISTER(&sk_plr_rpk1);
+	CVAR_REGISTER(&sk_plr_rpk2);
+	CVAR_REGISTER(&sk_plr_rpk3);
+
+	CVAR_REGISTER(&sk_ak_bullet1);
+	CVAR_REGISTER(&sk_ak_bullet2);
+	CVAR_REGISTER(&sk_ak_bullet3);
+
+	CVAR_REGISTER(&sk_asval_bullet1);
+	CVAR_REGISTER(&sk_asval_bullet2);
+	CVAR_REGISTER(&sk_asval_bullet3);
+
+	CVAR_REGISTER(&sk_groza_bullet1);
+	CVAR_REGISTER(&sk_groza_bullet2);
+	CVAR_REGISTER(&sk_groza_bullet3);
+
+	CVAR_REGISTER(&sk_ter_rpk_bullet1);
+	CVAR_REGISTER(&sk_ter_rpk_bullet2);
+	CVAR_REGISTER(&sk_ter_rpk_bullet3);
+
+	CVAR_REGISTER(&sk_ter_ak_bullet1);
+	CVAR_REGISTER(&sk_ter_ak_bullet2);
+	CVAR_REGISTER(&sk_ter_ak_bullet3);
+
+	CVAR_REGISTER(&sk_glock_bullet1);
+	CVAR_REGISTER(&sk_glock_bullet2);
+	CVAR_REGISTER(&sk_glock_bullet3);
+
+	CVAR_REGISTER(&sk_mil_kick1);
+	CVAR_REGISTER(&sk_mil_kick2);
+	CVAR_REGISTER(&sk_mil_kick3);
+
+	CVAR_REGISTER(&sk_mil_health1);
+	CVAR_REGISTER(&sk_mil_health2);
+	CVAR_REGISTER(&sk_mil_health3);
+
+	CVAR_REGISTER(&sk_alpha_health1);
+	CVAR_REGISTER(&sk_alpha_health2);
+	CVAR_REGISTER(&sk_alpha_health3);
+
+	CVAR_REGISTER(&sk_terror_health1);
+	CVAR_REGISTER(&sk_terror_health2);
+	CVAR_REGISTER(&sk_terror_health3);
+
+	CVAR_REGISTER(&sk_clone_health1);
+	CVAR_REGISTER(&sk_clone_health2);
+	CVAR_REGISTER(&sk_clone_health3);
+
+	CVAR_REGISTER(&sk_clone_health_heavy1);
+	CVAR_REGISTER(&sk_clone_health_heavy2);
+	CVAR_REGISTER(&sk_clone_health_heavy3);
+
+	CVAR_REGISTER(&bullet_punch_max);
+	CVAR_REGISTER(&bullet_punch_divide);
+	CVAR_REGISTER(&blast_punch_max);
+	CVAR_REGISTER(&blast_punch_divide);
+
+	// Wargon: ������� �� ������� ������. (1.1)
+	CVAR_REGISTER(&sk_dead_enemy_ammo1);
+	CVAR_REGISTER(&sk_dead_enemy_ammo2);
+	CVAR_REGISTER(&sk_dead_enemy_ammo3);
+
+	// Wargon: ������� �� ������� ������. (1.1)
+	CVAR_REGISTER(&sk_dead_enemy_ammo1);
+	CVAR_REGISTER(&sk_dead_enemy_ammo2);
+	CVAR_REGISTER(&sk_dead_enemy_ammo3);
 // END REGISTER CVARS FOR SKILL LEVEL STUFF
 
 	SERVER_COMMAND( "exec skill.cfg\n" );

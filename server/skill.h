@@ -135,6 +135,31 @@ struct skilldata_t
 	float plrStomach;
 	float plrLeg;
 	float plrArm;
+
+	//basyik 
+
+	// buz: paranoia weapons
+	float plrDmgAps;
+	float plrDmgBarret;
+	float plrDmgAks;
+	float plrDmgAk47;
+	float plrDmgAsval;
+	float plrDmgRpk;
+	float plrDmgGroza;
+
+	// zombie damage abjusters
+	float zomHead;
+	float zomChest;
+	float zomStomach;
+	float zomLeg;
+	float zomArm;
+
+	// buz: maxspeeds
+	float plrPrimaryMaxSpeed;	// in primary weapon mode
+	float plrSecondaryMaxSpeed;	// in secondary weapon mode
+
+	// ammo looting
+	float maxDeadEnemyAmmo;
 };
 
 extern	DLL_GLOBAL	skilldata_t	gSkillData;

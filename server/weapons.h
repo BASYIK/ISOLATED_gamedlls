@@ -83,6 +83,26 @@ public:
 #define WEAPON_SATCHEL			14
 #define WEAPON_SNARK			15
 
+// buz: paranoia weapons goes here
+#define WEAPON_AKS				16
+#define WEAPON_APS				17
+#define WEAPON_VAL				18
+#define WEAPON_RPK				19
+#define WEAPON_AKM				20
+#define WEAPON_GROZA			21
+#define WEAPON_TT33			25
+
+#define WEAPON_GASMASK		22
+#define WEAPON_HEADSHIELD	23
+#define WEAPON_PAINKILLER	24
+
+// buz: gasmask sounds
+#define SOUND_GASMASK_ON	"items/gasmask1.wav"
+#define SOUND_GASMASK_OFF	"items/gasmask2.wav"
+// buz: headshield sounds
+#define SOUND_SHIELD_ON		"items/headshield1.wav"
+#define SOUND_SHIELD_OFF	"items/headshield2.wav"
+
 #define WEAPON_ALLWEAPONS		(~(1<<WEAPON_SUIT))
 
 #define MAX_NORMAL_BATTERY	100
@@ -118,6 +138,15 @@ public:
 #define SNARK_MAX_CARRY			15
 #define HORNET_MAX_CARRY		8
 #define M203_GRENADE_MAX_CARRY	10
+// buz: paranoia wpns
+#define APS_MAX_CARRY		120
+#define BARRET_MAX_CARRY	60
+#define AK_MAX_CARRY		120
+#define AK47_MAX_CARRY		120
+#define PARANOIA_MP5_MAX_CARRY		120
+#define ASVAL_MAX_CARRY		80
+#define RPK_MAX_CARRY		200
+#define TT33_MAX_CARRY		120
 
 // the maximum amount of ammo each weapon's clip can hold
 #define WEAPON_NOCLIP			-1
@@ -137,6 +166,16 @@ public:
 #define SATCHEL_MAX_CLIP		WEAPON_NOCLIP
 #define TRIPMINE_MAX_CLIP		WEAPON_NOCLIP
 #define SNARK_MAX_CLIP			WEAPON_NOCLIP
+// buz: paranoia wpns
+#define APS_MAX_CLIP	12
+#define BARRET_MAX_CLIP	20
+#define AKS_MAX_CLIP	30
+#define AK47_MAX_CLIP	30
+#define PARANOIA_MP5_MAX_CLIP	30
+#define ASVAL_MAX_CLIP	20
+#define RPK_MAX_CLIP	100
+#define GROZA_MAX_CLIP	30
+#define TT33_MAX_CLIP	8
 
 
 // the default amount of ammo that comes with each gun when it spawns
@@ -168,6 +207,16 @@ public:
 #define AMMO_RPGCLIP_GIVE		RPG_MAX_CLIP
 #define AMMO_URANIUMBOX_GIVE	20
 #define AMMO_SNARKBOX_GIVE		5
+// buz: paranoia wpns
+#define APS_DEFAULT_GIVE	24
+#define BARRET_DEFAULT_GIVE	40
+#define AKS_DEFAULT_GIVE	30
+#define AK47_DEFAULT_GIVE	40
+#define PARANOIA_MP5_DEFAULT_GIVE	30
+#define ASVAL_DEFAULT_GIVE	20
+#define RPK_DEFAULT_GIVE	100
+#define GROZA_DEFAULT_GIVE	30
+#define TT33_DEFAULT_GIVE	8
 
 // bullet types
 typedef	enum
@@ -182,6 +231,23 @@ typedef	enum
 	BULLET_MONSTER_9MM,
 	BULLET_MONSTER_MP5,
 	BULLET_MONSTER_12MM,
+
+	// paranoia bullets
+	BULLET_PLAYER_APS,
+	BULLET_PLAYER_BARRET,
+	BULLET_PLAYER_AKS,
+	BULLET_PLAYER_AK47,
+	BULLET_PLAYER_ASVAL,
+	BULLET_PLAYER_RPK,
+	BULLET_PLAYER_GROZA,
+
+	BULLET_MONSTER_AK,
+	BULLET_MONSTER_ASVAL,
+	BULLET_MONSTER_GROZA,
+	BULLET_MONSTER_GLOCK,
+
+	BULLET_TERROR_AK,
+	BULLET_TERROR_RPK
 } Bullet;
 
 
@@ -221,8 +287,17 @@ class CBasePlayerItem : public CBaseAnimating
 public:
 	virtual void SetObjectCollisionBox( void );
 
+	// buz: get advance spread vec to send it to client
+	// gun dont use advanced spread by default
+	virtual Vector GetSpreadVec(void) { return Vector(0, 0, 0); };
+
+	// buz: gun jumping actions
+	virtual void PlayerJump() {};
+
 	DECLARE_DATADESC();
 
+	// buz: get current weapon mode (for toggleable weapons)
+	virtual int GetMode(void) { return 0; }; // 0 means gun dont use mode
 	virtual int AddToPlayer( CBasePlayer *pPlayer );	// return TRUE if the item you want the item added to the player inventory
 	virtual int AddDuplicate( CBasePlayerItem *pItem ) { return FALSE; }	// return TRUE if you want your duplicate removed from world
 	void DestroyItem( void );
@@ -277,11 +352,45 @@ public:
 };
 
 // inventory items that 
+
+struct wepspread_t
+{
+	float MaxSpreadX;
+	float MaxSpreadY;
+
+	float SpreadX;
+	float SpreadY;
+};
+
+struct wepsread_t;
+
+
+struct wepspread2_t
+{
+	float MaxSpreadX2;
+	float MaxSpreadY2;
+
+	float SpreadX2;
+	float SpreadY2;
+};
+
+struct wepsread2_t;
+
+// inventory items that 
 class CBasePlayerWeapon : public CBasePlayerItem
 {
 	DECLARE_CLASS( CBasePlayerWeapon, CBasePlayerItem );
 public:
 	DECLARE_DATADESC();
+
+	// basyik
+	//int GetMode(void); // 0 means gun dont use mode
+	int m_fInIronsight; // don't save this
+	int m_fInIronsightUse;
+	void DefaultFire(CBasePlayer* m_pPlayer, int cShots, wepspread_t spread, float damage, int anim, char* sound, int RadOfBright);
+	void DefaultFireIronsight(CBasePlayer* m_pPlayer, int cShots, wepspread2_t spread, float damage, int anim, char* sound, int RadOfBright);
+	struct wepspread_t wepspread_s;
+	struct wepspread2_t wepspread2_s;
 
 	// generic weapon versions of CBasePlayerItem calls
 	virtual int AddToPlayer( CBasePlayer *pPlayer );
@@ -341,7 +450,7 @@ public:
 	int	m_iClientClip;			// the last version of m_iClip sent to hud dll
 	int	m_iClientWeaponState;		// the last version of the weapon state sent to hud dll (is current weapon, is on target)
 	int	m_fInReload;			// Are we in the middle of a reload;
-
+	int		LeftSpread;
 	int	m_iDefaultAmmo;// how much ammo you get when you pick up this weapon as placed by a level designer.
 
 };

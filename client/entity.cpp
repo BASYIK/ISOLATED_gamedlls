@@ -25,6 +25,8 @@
 #include "exportdef.h"
 
 void Game_AddObjects( void );
+extern int g_iGunMode;
+extern vec3_t g_vSpread;
 
 extern vec3_t v_origin;
 //extern vec3_t g_vSpread;
@@ -178,20 +180,15 @@ void DLLEXPORT HUD_ProcessPlayerState( struct entity_state_s *dst, const struct 
 
 	memcpy( &dst->controller[0], &src->controller[0], 4 * sizeof( byte ));
 	memcpy( &dst->blending[0], &src->blending[0], 2 * sizeof( byte ));
+	// buz
+	g_vSpread = src->vuser1;
+	g_iGunMode = src->vuser2[0];
 
 	// Save off some data so other areas of the Client DLL can get to it
-	//cl_entity_t *player = gEngfuncs.GetLocalPlayer();	// Get the local player's index
-	//if ( dst->number == player->index )
-	//{
-	//	g_iPlayerClass = dst->playerclass;
-	//	g_iTeamNumber = dst->team;
-	//}
-
-	// buz: get flashlight status
-	if (dst->effects & EF_DIMLIGHT)
-		g_PlayerFlashlight.TurnOn();
-	else 
-		g_PlayerFlashlight.TurnOff();
+//	cl_entity_t *player = gEngfuncs.GetLocalPlayer();	// Get the local player's index
+//	if ( dst->number == player->index )
+//	{
+//	}
 }
 
 /*

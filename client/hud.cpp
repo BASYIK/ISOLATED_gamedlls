@@ -26,7 +26,8 @@ void CHud :: Init( void )
  	m_SayText.Init();
 	m_Menu.Init();
 	m_MOTD.Init();
-		
+	m_pZoomSpeed = CVAR_REGISTER("cl_zoomspeed", "100", 0);
+
 	MsgFunc_ResetHUD( 0, 0, NULL );
 }
 
@@ -74,7 +75,9 @@ void CHud :: VidInit( void )
 	// Load Sprites
 	// ---------
 	m_hHudError = 0;
-	
+
+	m_flFOV = -1; // buz
+
 	if( ScreenWidth < 640 )
 		m_iRes = 320;
 	else m_iRes = 640;

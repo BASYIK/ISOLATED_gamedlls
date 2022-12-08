@@ -35,7 +35,6 @@
 extern int gEvilImpulse101;
 
 #define NOT_USED 255
-
 DLL_GLOBAL short	g_sModelIndexLaser;// holds the index for the laser beam
 DLL_GLOBAL const char *g_pModelNameLaser = "sprites/laserbeam.spr";
 DLL_GLOBAL short	g_sModelIndexLaserDot;// holds the index for the laser beam dot
@@ -306,6 +305,7 @@ void UTIL_PrecacheOtherWeapon( const char *szClassname )
 
 	REMOVE_ENTITY(pEntity->edict());
 }
+void LoadSpreadTable(char* filename); // buz
 
 // called by worldspawn
 void W_Precache(void)
@@ -316,6 +316,18 @@ void W_Precache(void)
 
 	// custom items...
 
+
+	// PARANOIA
+	// 
+	// akm
+	UTIL_PrecacheOtherWeapon("weapon_akm");
+	UTIL_PrecacheOther("ammo_akm");
+	// aps
+	// 
+	UTIL_PrecacheOtherWeapon("weapon_aps");
+	UTIL_PrecacheOther("ammo_aps");
+	UTIL_PrecacheOther("ammo_apsbox");
+	// 
 	// common world objects
 	UTIL_PrecacheOther( "item_suit" );
 	UTIL_PrecacheOther( "item_battery" );
@@ -329,6 +341,7 @@ void W_Precache(void)
 
 	// crowbar
 	UTIL_PrecacheOtherWeapon( "weapon_crowbar" );
+	UTIL_PrecacheOtherWeapon("weapon_knife");
 
 	// glock
 	UTIL_PrecacheOtherWeapon( "weapon_9mmhandgun" );
@@ -339,39 +352,11 @@ void W_Precache(void)
 	UTIL_PrecacheOther( "ammo_9mmAR" );
 	UTIL_PrecacheOther( "ammo_ARgrenades" );
 
-	// python
-	UTIL_PrecacheOtherWeapon( "weapon_357" );
-	UTIL_PrecacheOther( "ammo_357" );
-
-	// gauss
-	UTIL_PrecacheOtherWeapon( "weapon_gauss" );
-	UTIL_PrecacheOther( "ammo_gaussclip" );
-
 	// rpg
 	UTIL_PrecacheOtherWeapon( "weapon_rpg" );
 	UTIL_PrecacheOther( "ammo_rpgclip" );
-
-	// crossbow
-	UTIL_PrecacheOtherWeapon( "weapon_crossbow" );
-	UTIL_PrecacheOther( "ammo_crossbow" );
-
-	// egon
-	UTIL_PrecacheOtherWeapon( "weapon_egon" );
-
-	// tripmine
-	UTIL_PrecacheOtherWeapon( "weapon_tripmine" );
-
-	// satchel charge
-	UTIL_PrecacheOtherWeapon( "weapon_satchel" );
-
 	// hand grenade
 	UTIL_PrecacheOtherWeapon("weapon_handgrenade");
-
-	// squeak grenade
-	UTIL_PrecacheOtherWeapon( "weapon_snark" );
-
-	// hornetgun
-	UTIL_PrecacheOtherWeapon( "weapon_hornetgun" );
 
 	if ( g_pGameRules->IsDeathmatch() )
 	{
@@ -406,6 +391,8 @@ void W_Precache(void)
 
 	PRECACHE_SOUND("items/weapondrop1.wav");// weapon falls to the ground
 
+	// buz:
+	LoadSpreadTable("spread_settings.txt");
 }
 
 BEGIN_DATADESC( CBasePlayerItem )
@@ -1007,7 +994,14 @@ int CBasePlayerWeapon::SecondaryAmmoIndex( void )
 }
 
 void CBasePlayerWeapon::Holster( void )
-{ 
+{
+	if (m_fInIronsight)
+	{
+		m_fInIronsightUse = 0;
+		SecondaryAttack();
+	}
+
+
 	m_fInReload = FALSE; // cancel any reload in progress.
 	m_pPlayer->pev->viewmodel = 0; 
 	m_pPlayer->pev->weaponmodel = 0;
@@ -1549,3 +1543,327 @@ void CLaserSpot::Precache( void )
 {
 	PRECACHE_MODEL("sprites/laserdot.spr");
 }
+
+// BASYIK
+#define max(a, b)  (((a) > (b)) ? (a) : (b))
+#define min(a, b)  (((a) < (b)) ? (a) : (b))
+
+// OLD 
+void CBasePlayerWeapon::DefaultFire(CBasePlayer* m_pPlayer, int cShots, wepspread_t spread, float damage, int anim, char* sound, int RadOfBright)
+{
+	if (m_iClip <= 0)
+	{
+		PlayEmptySound();
+		m_flNextPrimaryAttack = 0.15;
+		return;
+	}
+
+	if (anim >= 0)
+		SendWeaponAnim(anim);
+
+	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
+	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
+	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
+	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+	if (sound)
+		EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_WEAPON, sound, 1.0, ATTN_NORM, 0, 100);
+
+	cShots = min(m_iClip, cShots);
+	m_iClip -= cShots;
+
+	Vector vecSrc(m_pPlayer->GetGunPosition());
+	Vector vecAim(m_pPlayer->GetAutoaimVector(AUTOAIM_2DEGREES));
+	Vector vecAcc(g_vecZero);
+	Vector vecDir;
+	if (cShots != 1)
+		vecAcc = vec3_t(spread.SpreadX / 100, spread.SpreadY / 100, 0);
+	float spead = m_pPlayer->pev->velocity.Length();
+	if (m_pPlayer->pev->velocity.Length())
+		vecAcc = vecAcc + vec3_t(spread.SpreadY / 5000, spread.SpreadY / 5000, 0) * m_pPlayer->pev->velocity.Length();
+	if (cShots == 1)
+		vecAcc = vecAcc / 10;
+	if (!(m_pPlayer->pev->flags & FL_ONGROUND))
+		vecAcc = vecAcc + vec3_t(spread.SpreadY / 5000, spread.SpreadY / 5000, 0) * 250;
+
+	m_pPlayer->pev->punchangle.x -= RANDOM_FLOAT(spread.SpreadY / 2, spread.SpreadY);
+	m_pPlayer->pev->punchangle.y += spread.SpreadX * RANDOM_LONG(-1, 1) / 2;
+
+	if (m_pPlayer->pev->punchangle.x < -spread.MaxSpreadY)
+	{
+		m_pPlayer->pev->punchangle.x = -spread.MaxSpreadY + RANDOM_LONG(-2, 2);
+		m_pPlayer->pev->punchangle.y += spread.SpreadX * LeftSpread;
+	}
+
+	if (m_pPlayer->pev->punchangle.y <= -spread.MaxSpreadX)
+		LeftSpread = 1;
+	else if (m_pPlayer->pev->punchangle.y > spread.MaxSpreadX)
+		LeftSpread = -1;
+	vecDir = m_pPlayer->FireBulletsPlayer(cShots, vecSrc, vecAim, vecAcc, 8192, 0, 0, damage, m_pPlayer->pev, m_pPlayer->random_seed);
+
+	if (!LeftSpread)
+		LeftSpread = 1;
+}
+
+
+
+void CBasePlayerWeapon::DefaultFireIronsight(CBasePlayer* m_pPlayer, int cShots, wepspread2_t spread, float damage, int anim, char* sound, int RadOfBright)
+{
+	if (m_iClip <= 0)
+	{
+		PlayEmptySound();
+		m_flNextPrimaryAttack = 0.15;
+		return;
+	}
+
+	if (anim >= 0)
+		SendWeaponAnim(anim);
+
+	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
+	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
+	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
+	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
+	if (sound)
+		EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_WEAPON, sound, 1.0, ATTN_NORM, 0, 100);
+
+	cShots = min(m_iClip, cShots);
+	m_iClip -= cShots;
+
+	Vector vecSrc(m_pPlayer->GetGunPosition());
+	Vector vecAim(m_pPlayer->GetAutoaimVector(AUTOAIM_2DEGREES));
+	Vector vecAcc(g_vecZero);
+	Vector vecDir;
+	if (cShots != 1)
+		vecAcc = vec3_t(spread.SpreadX2 / 100, spread.SpreadY2 / 100, 0);
+	float spead = m_pPlayer->pev->velocity.Length();
+	if (m_pPlayer->pev->velocity.Length())
+		vecAcc = vecAcc + vec3_t(spread.SpreadY2 / 5000, spread.SpreadY2 / 5000, 0) * m_pPlayer->pev->velocity.Length();
+	if (cShots == 1)
+		vecAcc = vecAcc / 10;
+	if (!(m_pPlayer->pev->flags & FL_ONGROUND))
+		vecAcc = vecAcc + vec3_t(spread.SpreadY2 / 5000, spread.SpreadY2 / 5000, 0) * 250;
+
+	m_pPlayer->pev->punchangle.x -= RANDOM_FLOAT(spread.SpreadY2 / 2, spread.SpreadY2);
+	m_pPlayer->pev->punchangle.y += spread.SpreadX2 * RANDOM_LONG(-1, 1) / 2;
+
+	if (m_pPlayer->pev->punchangle.x < -spread.MaxSpreadY2)
+	{
+		m_pPlayer->pev->punchangle.x = -spread.MaxSpreadY2 + RANDOM_LONG(-2, 2);
+		m_pPlayer->pev->punchangle.y += spread.SpreadX2 * LeftSpread;
+	}
+
+	if (m_pPlayer->pev->punchangle.y <= -spread.MaxSpreadX2)
+		LeftSpread = 1;
+	else if (m_pPlayer->pev->punchangle.y > spread.MaxSpreadX2)
+		LeftSpread = -1;
+	vecDir = m_pPlayer->FireBulletsPlayer(cShots, vecSrc, vecAim, vecAcc, 8192, 0, 0, damage, m_pPlayer->pev, m_pPlayer->random_seed);
+
+	if (!LeftSpread)
+		LeftSpread = 1;
+}
+
+enum ak47_e
+{
+	AK47_IDLE_A = 0,
+	AK47_RELOAD_A,
+	AK47_DRAW,
+	AK47_SHOOT_A,
+	AK47_IDLE_B,
+	AK47_CHANGETO_B,
+	AK47_CHANGETO_A,
+	AK47_SHOOT_B,
+	AK47_RELOAD_B,
+};
+
+
+class CAK47 : public CBasePlayerWeapon
+{
+	DECLARE_CLASS(CAK47, CBasePlayerWeapon);
+public:
+	virtual void Spawn(void);
+	virtual void Precache(void);
+	virtual int iItemSlot(void) { return 3; }
+	virtual int GetItemInfo(ItemInfo* p);
+	virtual int AddToPlayer(CBasePlayer* pPlayer);
+	virtual void PrimaryAttack(void);
+	virtual BOOL Deploy(void);
+	virtual void Reload(void);
+	virtual void WeaponIdle(void);
+	virtual void SecondaryAttack(void);
+
+private:
+	int m_iShell;
+};
+LINK_ENTITY_TO_CLASS(weapon_akm, CAK47);
+
+void CAK47::SecondaryAttack(void)
+{
+	// do not switch zoom when player stay button is pressed
+	if (m_fInIronsightUse)
+		return;
+
+	m_fInIronsightUse = 1;
+
+	if (m_fInIronsight)
+	{
+		SendWeaponAnim(AK47_CHANGETO_A);
+		g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 140);
+		m_fInIronsight = 0;
+	}
+	else
+	{
+		SendWeaponAnim(AK47_CHANGETO_B);
+		g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 120);
+		m_fInIronsight = 1;
+	}
+	m_pPlayer->m_flNextAttack = gpGlobals->time + 0.3;
+	m_flNextSecondaryAttack = m_flNextPrimaryAttack = m_pPlayer->m_flNextAttack;
+	m_flTimeWeaponIdle = gpGlobals->time + 5.0;
+}
+
+
+void CAK47::Spawn()
+{
+	Precache();
+	SET_MODEL(ENT(pev), "models/w_ak74.mdl");
+	m_iId = WEAPON_AKM;
+
+	m_iDefaultAmmo = 120;
+
+	wepspread_s.MaxSpreadX = 2.2;
+	wepspread_s.MaxSpreadY = 3.5;
+
+	wepspread_s.SpreadX = 2;
+	wepspread_s.SpreadY = 2;
+
+	wepspread2_s.MaxSpreadX2 = 2;
+	wepspread2_s.MaxSpreadY2 = 2;
+
+	wepspread2_s.SpreadX2 = 2;
+	wepspread2_s.SpreadY2 = 1;
+
+	FallInit();
+}
+
+void CAK47::Precache(void)
+{
+	PRECACHE_MODEL("models/v_akm.mdl");
+	PRECACHE_MODEL("models/p_ak74.mdl");
+	PRECACHE_MODEL("models/w_ak74.mdl");
+
+	m_iShell = PRECACHE_MODEL("models/ak74_shell.mdl");
+
+	PRECACHE_SOUND("weapons/akm/akm.wav");
+}
+
+int CAK47::GetItemInfo(ItemInfo* p)
+{
+	p->pszName = STRING(pev->classname);
+	p->pszAmmo1 = "ammo_ak47";
+	p->iMaxAmmo1 = 120;
+	p->pszAmmo2 = NULL;
+	p->iMaxAmmo2 = -1;
+	p->iMaxClip = 30;
+	p->iSlot = 2;
+	p->iPosition = 0;
+	p->iFlags = 0;
+	p->iId = m_iId = WEAPON_AKM;
+	p->iWeight = 25;
+
+	return 1;
+}
+
+int CAK47::AddToPlayer(CBasePlayer* pPlayer)
+{
+	if (CBasePlayerWeapon::AddToPlayer(pPlayer))
+	{
+		MESSAGE_BEGIN(MSG_ONE, gmsgWeapPickup, NULL, pPlayer->pev);
+		WRITE_BYTE(m_iId);
+		MESSAGE_END();
+		return TRUE;
+	}
+	return FALSE;
+}
+
+BOOL CAK47::Deploy()
+{
+	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 140);
+	return DefaultDeploy("models/v_akm.mdl", "models/p_ak74.mdl", AK47_DRAW, "ak47");
+}
+
+void CAK47::PrimaryAttack()
+{
+	if (m_fInIronsight)
+	{
+		DefaultFireIronsight(m_pPlayer, 1, wepspread2_s, 14, AK47_SHOOT_B, "weapons/akm/akm.wav", 20);
+	}
+	else
+	{
+		DefaultFire(m_pPlayer, 1, wepspread_s, 14, AK47_SHOOT_A, "weapons/akm/akm.wav", 20);
+	}
+
+	m_flNextPrimaryAttack = gpGlobals->time + 0.1;
+	m_flTimeWeaponIdle = gpGlobals->time + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 1.085, 2.085);
+
+}
+
+void CAK47::Reload(void)
+{
+	if (m_fInIronsight)
+	{
+		DefaultReload(30, AK47_RELOAD_B, 2.45);
+	}
+	else
+	{
+		DefaultReload(30, AK47_RELOAD_A, 2.45);
+	}
+}
+
+void CAK47::WeaponIdle(void)
+{
+	ResetEmptySound();
+	m_fInIronsightUse = 0;
+	m_pPlayer->GetAutoaimVector(AUTOAIM_5DEGREES);
+
+	if (m_flTimeWeaponIdle > gpGlobals->time)
+		return;
+
+	if (m_fInIronsight)
+	{
+		SendWeaponAnim(AK47_IDLE_B);
+	}
+	else
+	{
+		SendWeaponAnim(AK47_IDLE_A);
+	}
+
+	m_flTimeWeaponIdle = UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+}
+
+class CAKMAmmo : public CBasePlayerAmmo
+{
+	DECLARE_CLASS(CAKMAmmo, CBasePlayerAmmo);
+
+	void Spawn(void)
+	{
+		Precache();
+		SET_MODEL(ENT(pev), "models/w_ak74ammo.mdl");
+		CBasePlayerAmmo::Spawn();
+	}
+	void Precache(void)
+	{
+		PRECACHE_MODEL("models/w_ak74ammo.mdl");
+		PRECACHE_SOUND("items/9mmclip1.wav");
+	}
+	BOOL AddAmmo(CBaseEntity* pOther)
+	{
+		if (pOther->GiveAmmo(30, "ammo_ak47", 120) != -1)
+		{
+			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
+			return TRUE;
+		}
+		return FALSE;
+	}
+};
+
+LINK_ENTITY_TO_CLASS(ammo_akm, CAKMAmmo);
+//

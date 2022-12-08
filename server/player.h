@@ -1,4 +1,4 @@
-/***
+﻿/***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
@@ -119,7 +119,35 @@ class CBasePlayer : public CBaseMonster
 	DECLARE_CLASS( CBasePlayer, CBaseMonster );
 public:
 	int		random_seed;    // See that is shared between client & server for shared weapons code
+	// BASYIK
 
+		// buz: gasmask
+//	int		m_iHasGasMask;
+	int		m_iGasMaskOn;
+	int		m_iUpdateGasMask;
+	float	m_flGasMaskTime;
+	float	m_flNextBreathTime;
+	int		m_iLastGasMaskSound;
+
+	// buz: head shield
+	int		m_iHeadShieldOn;
+	int		m_iUpdateHeadShield;
+	float	m_flHeadShieldTime;
+
+	// buz: special tank
+	CBaseEntity* m_pSpecTank;
+
+	// buz: jumping height
+	int		m_iJumpHeight; // in percents, 0 - 100
+	void	SetJumpHeight(int value);
+	void ViewPunch(float p, float y, float r); // ТИХО СПИЗДИЛ И УШЁЛ НАЗЫВАЕТСЯ НАШЁЛ
+
+	// buz
+	void	ToggleGasMask(void);
+	void	ToggleHeadShield(void);
+
+
+	//end
 	int		m_iPlayerSound;// the index of the sound list slot reserved for this player
 	int		m_iTargetVolume;// ideal sound volume. 
 	int		m_iWeaponVolume;// how loud the player's weapon is right now.

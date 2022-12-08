@@ -1659,3 +1659,126 @@ void CBaseMonster :: MakeDamageBloodDecal ( int cCount, float flNoise, TraceResu
 	}
 }
 
+
+/*
+================
+FireBullets
+
+Go to the trouble of combining multiple pellets into a single damage call.
+
+This version is used by Players, uses the random seed generator to sync client and server side shots.
+================
+*/
+
+
+Vector CBaseEntity::FireBulletsPlayer(ULONG cShots, Vector vecSrc, Vector vecDirShooting, Vector vecSpread, float flDistance, int iBulletType, int iTracerFreq, int iDamage, entvars_t* pevAttacker, int shared_rand)
+{
+	static int tracerCount;
+	TraceResult tr;
+	Vector vecRight = gpGlobals->v_right;
+	Vector vecUp = gpGlobals->v_up;
+	float x, y, z;
+	int tracer;
+
+	if (pevAttacker == NULL)
+		pevAttacker = pev;  // the default attacker is ourselves
+
+	ClearMultiDamage();
+	gMultiDamage.type = DMG_BULLET | DMG_NEVERGIB;
+
+
+	for (ULONG iShot = 1; iShot <= cShots; iShot++)
+	{
+		//Use player's random seed.
+		// get circular gaussian spread
+		x = UTIL_SharedRandomFloat(shared_rand + iShot, -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (1 + iShot), -0.5, 0.5);
+		y = UTIL_SharedRandomFloat(shared_rand + (2 + iShot), -0.5, 0.5) + UTIL_SharedRandomFloat(shared_rand + (3 + iShot), -0.5, 0.5);
+		z = x * x + y * y;
+		tracer = 0;
+		Vector vecDir = vecDirShooting +
+			x * vecSpread.x * vecRight +
+			y * vecSpread.y * vecUp;
+		Vector vecEnd;
+
+		vecEnd = vecSrc + vecDir * flDistance;
+		UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(pev)/*pentIgnore*/, &tr);
+
+		// do damage, paint decals
+		if (tr.flFraction != 1.0)
+		{
+			CBaseEntity* pEntity = CBaseEntity::Instance(tr.pHit);
+
+			if (iDamage)
+			{
+				pEntity->TraceAttack(pevAttacker, iDamage, vecDir, &tr, DMG_BULLET | ((iDamage > 16) ? DMG_ALWAYSGIB : DMG_NEVERGIB));
+
+				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+			}
+			else switch (iBulletType)
+			{
+			case BULLET_PLAYER_APS:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgAps, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			case BULLET_PLAYER_BARRET:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgBarret, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			case BULLET_PLAYER_AKS:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgAks, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			case BULLET_PLAYER_AK47:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgAk47, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			case BULLET_PLAYER_ASVAL:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgAsval, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			case BULLET_PLAYER_GROZA:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgGroza, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			case BULLET_PLAYER_RPK:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgRpk, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			default:
+			case BULLET_PLAYER_9MM:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmg9MM, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			case BULLET_PLAYER_MP5:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgMP5, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			case BULLET_PLAYER_BUCKSHOT:
+				// make distance based!
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmgBuckshot, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+
+			case BULLET_PLAYER_357:
+				pEntity->TraceAttack(pevAttacker, gSkillData.plrDmg357, vecDir, &tr, DMG_BULLET);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+				break;
+			}
+			// make bullet trails
+			UTIL_BubbleTrail(vecSrc, tr.vecEndPos, (flDistance * tr.flFraction) / 64.0);
+		}
+		ApplyMultiDamage(pev, pevAttacker);
+
+		return Vector(x * vecSpread.x, y * vecSpread.y, 0.0);
+	}
+}

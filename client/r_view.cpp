@@ -44,6 +44,7 @@ cvar_t	v_ipitch_cycle	= { "v_ipitch_cycle", "1", 0, 1 };
 cvar_t	v_iyaw_level  	= { "v_iyaw_level", "0.3", 0, 0.3 };
 cvar_t	v_iroll_level 	= { "v_iroll_level", "0.1", 0, 0.1 };
 cvar_t	v_ipitch_level	= { "v_ipitch_level", "0.3", 0, 0.3 };
+vec3_t	g_CrosshairAngle; // buz
 
 //============================================================================== 
 //				VIEW RENDERING 
@@ -890,6 +891,8 @@ void V_InterpolatePos( struct ref_params_s *pparams )
 //==========================
 void V_CalcFirstPersonRefdef( struct ref_params_s *pparams )
 {
+	VectorCopy(pparams->crosshairangle, g_CrosshairAngle); // save it for crosshair rendering
+
 	V_DriftPitch( pparams );
 
 	float bob = V_CalcBob( pparams );
