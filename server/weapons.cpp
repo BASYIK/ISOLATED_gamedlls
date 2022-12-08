@@ -319,14 +319,41 @@ void W_Precache(void)
 
 	// PARANOIA
 	// 
-	// akm
-	UTIL_PrecacheOtherWeapon("weapon_akm");
-	UTIL_PrecacheOther("ammo_akm");
-	// aps
-	// 
+	UTIL_PrecacheOther("item_gasmask"); // buz
+	UTIL_PrecacheOther("item_headshield"); // buz
+
+	// Paranoia weapons
+	UTIL_PrecacheOtherWeapon("weapon_aks");
+	UTIL_PrecacheOther("ammo_aks");
+	UTIL_PrecacheOther("ammo_aksbox");
+
+	UTIL_PrecacheOtherWeapon("weapon_ak74");
+	UTIL_PrecacheOther("ammo_ak74");
+	UTIL_PrecacheOther("ammo_ak74box");
+
+	UTIL_PrecacheOtherWeapon("weapon_rpk");
+	UTIL_PrecacheOther("ammo_rpk");
+	UTIL_PrecacheOther("ammo_rpkbox");
+
 	UTIL_PrecacheOtherWeapon("weapon_aps");
 	UTIL_PrecacheOther("ammo_aps");
 	UTIL_PrecacheOther("ammo_apsbox");
+
+	UTIL_PrecacheOtherWeapon("weapon_val");
+	UTIL_PrecacheOther("ammo_val");
+	UTIL_PrecacheOther("ammo_valbox");
+
+	UTIL_PrecacheOtherWeapon("weapon_svd");
+	UTIL_PrecacheOther("ammo_svd");
+	UTIL_PrecacheOther("ammo_svdbox");
+
+	UTIL_PrecacheOtherWeapon("weapon_groza");
+	UTIL_PrecacheOther("ammo_groza");
+	UTIL_PrecacheOther("ammo_grozabox");
+
+	UTIL_PrecacheOtherWeapon("weapon_tt33");
+	UTIL_PrecacheOther("ammo_tt33");
+
 	// 
 	// common world objects
 	UTIL_PrecacheOther( "item_suit" );

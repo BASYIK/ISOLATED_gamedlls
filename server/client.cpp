@@ -465,6 +465,16 @@ void ClientCommand( edict_t *pEntity )
 		CBaseEntity *pSpawnSpot = CBaseEntity::Instance( pentSpawnSpot );
 		pPlayer->StartObserver( pSpawnSpot->GetAbsOrigin(), pSpawnSpot->GetAbsAngles());
 	}
+	else if (FStrEq(pcmd, "gasmask"))
+	{
+		CBasePlayer* pPlayer = GetClassPtr((CBasePlayer*)pev);
+		pPlayer->ToggleGasMask();
+	}
+	else if (FStrEq(pcmd, "headshield"))
+	{
+		CBasePlayer* pPlayer = GetClassPtr((CBasePlayer*)pev);
+		pPlayer->ToggleHeadShield();
+	}
 	else if ( g_pGameRules->ClientCommand( GetClassPtr((CBasePlayer *)pev), pcmd ) )
 	{
 		// MenuSelect returns true only if the command is properly handled,  so don't print a warning
@@ -1656,13 +1666,13 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 		cd->vuser1 = vecSpread;
 
 		// buz: send gun mode for hud indication
-		cd->vuser2.x = pl->m_pActiveItem->GetMode();
+		cd->iuser4 = pl->m_pActiveItem->GetMode();
 
 	}
 	else
 	{
-		cd->vuser1 = Vector(0, 0, 0);
-		cd->vuser2.x = 0;
+		cd->vuser1 = g_vecZero;
+		cd->iuser4 = 0;
 	}
 
 }

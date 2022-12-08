@@ -180,15 +180,6 @@ void DLLEXPORT HUD_ProcessPlayerState( struct entity_state_s *dst, const struct 
 
 	memcpy( &dst->controller[0], &src->controller[0], 4 * sizeof( byte ));
 	memcpy( &dst->blending[0], &src->blending[0], 2 * sizeof( byte ));
-	// buz
-	g_vSpread = src->vuser1;
-	g_iGunMode = src->vuser2[0];
-
-	// Save off some data so other areas of the Client DLL can get to it
-//	cl_entity_t *player = gEngfuncs.GetLocalPlayer();	// Get the local player's index
-//	if ( dst->number == player->index )
-//	{
-//	}
 }
 
 /*
@@ -254,6 +245,10 @@ void DLLEXPORT HUD_TxferPredictionData ( struct entity_state_s *ps, const struct
 	pcd->vuser2 = ppcd->vuser2;
 	pcd->vuser3 = ppcd->vuser3;
 	pcd->vuser4 = ppcd->vuser4;
+
+	// buz
+	g_vSpread = pcd->vuser1;
+	g_iGunMode = pcd->iuser4;
 
 	memcpy( wd, pwd, 32 * sizeof( weapon_data_t ) );
 }

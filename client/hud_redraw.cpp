@@ -24,16 +24,14 @@ int grgLogoFrame[MAX_LOGO_FRAMES] =
 	16, 17, 18, 19, 20, 20, 20, 20, 20, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 
 	29, 29, 29, 29, 29, 28, 27, 26, 25, 24, 30, 31 
 };
-int g_iGunMode;
-extern vec3_t g_CrosshairAngle; // buz
 vec3_t g_vSpread;
+int g_iGunMode = 0;
+extern vec3_t g_CrosshairAngle; // buz
 
 void CHud::Think( void )
 {
-	HUDLIST *pList = m_pHudList;
-
-
 	float targetFOV;
+	HUDLIST* pList = m_pHudList;
 	static float lasttime = 0;
 
 	while (pList)
@@ -43,9 +41,11 @@ void CHud::Think( void )
 		pList = pList->pNext;
 	}
 
-	if (g_iGunMode == 3)	targetFOV = 30;
-	else if (g_iGunMode == 2)	targetFOV = 60;
-	else						targetFOV = CVAR_GET_FLOAT("default_fov");	// jay - dynamic fov
+	if (g_iGunMode == 3)
+		targetFOV = 30;
+	else if (g_iGunMode == 2)
+		targetFOV = 60;
+	else targetFOV = default_fov->value;
 
 	static float lastFixedFov = 0;
 
@@ -61,10 +61,13 @@ void CHud::Think( void )
 		float mod = targetFOV - m_flFOV;
 		if (mod < 0) mod *= -1;
 		if (mod < 30) mod = 30;
-		if (g_iGunMode == 3 || lastFixedFov == 30) mod *= 2; // хаками халфа полнится (c)
+
+		if (g_iGunMode == 3 || lastFixedFov == 30)
+			mod *= 2; // хаками халфа полнится (c)
 		mod /= 30;
 
-		if (m_flFOV < targetFOV) {
+		if (m_flFOV < targetFOV)
+		{
 			m_flFOV += (curtime - lasttime) * m_pZoomSpeed->value * mod;
 			if (m_flFOV > targetFOV)
 			{
@@ -72,8 +75,10 @@ void CHud::Think( void )
 				lastFixedFov = m_flFOV;
 			}
 		}
-		else if (m_flFOV > targetFOV) {
+		else if (m_flFOV > targetFOV)
+		{
 			m_flFOV -= (curtime - lasttime) * m_pZoomSpeed->value * mod;
+
 			if (m_flFOV < targetFOV)
 			{
 				m_flFOV = targetFOV;
@@ -148,10 +153,13 @@ int CHud :: Redraw( float flTime, int intermission )
 	}
 
 
-
 	// buz: draw crosshair
-	if ((g_vSpread[0] && g_iGunMode != 3 ) && gHUD.m_pCvarDraw->value) // Wargon: Прицел рисуется только если hud_draw = 1.
+	// Wargon: Прицел рисуется только если hud_draw = 1.
+	if ((g_vSpread[0] && g_iGunMode != 3) && gHUD.m_pCvarDraw->value )
 	{
+		//if (gViewPort && gViewPort->m_pParanoiaText && gViewPort->m_pParanoiaText->isVisible())
+		//	return 1;
+
 		int barsize = XRES(g_iGunMode == 1 ? 9 : 6);
 		int hW = ScreenWidth / 2;
 		int hH = ScreenHeight / 2;
@@ -170,12 +178,11 @@ int CHud :: Redraw( float flTime, int intermission )
 		// gEngfuncs.Con_Printf("received spread: %f\n", g_vSpread[2]);
 		int c = 255 - (g_vSpread[2] * 0.5);
 
-		FillRGBA(hW - dir - barsize, hH, barsize, 1, 255, c, c, 200);
-		FillRGBA(hW + dir, hH, barsize, 1, 255, c, c, 200);
-		FillRGBA(hW, hH - dir - barsize, 1, barsize, 255, c, c, 200);
-		FillRGBA(hW, hH + dir, 1, barsize, 255, c, c, 200);
-
-		//	FillRGBA(hW - dir, hH - dir, dir*2, dir*2, 20, 150, 20, 100);
+			// old Paranoia-style crosshair
+			FillRGBA(hW - dir - barsize, hH, barsize, 1, 255, c, c, 200);
+			FillRGBA(hW + dir, hH, barsize, 1, 255, c, c, 200);
+			FillRGBA(hW, hH - dir - barsize, 1, barsize, 255, c, c, 200);
+			FillRGBA(hW, hH + dir, 1, barsize, 255, c, c, 200);
 	}
 
 

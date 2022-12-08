@@ -411,3 +411,77 @@ class CItemGeneric : public CItem
 };
 
 LINK_ENTITY_TO_CLASS( item_generic, CItemGeneric );
+
+
+// buz: gasmask
+class CItemGasMask : public CItem
+{
+	void Spawn(void)
+	{
+		Precache();
+		SET_MODEL(ENT(pev), "models/w_gasmask.mdl");
+		CItem::Spawn();
+	}
+	void Precache(void)
+	{
+		PRECACHE_MODEL("models/w_gasmask.mdl");
+		PRECACHE_SOUND("items/gunpickup2.wav");
+	}
+	BOOL MyTouch(CBasePlayer* pPlayer)
+	{
+		//	if ( pPlayer->m_iHasGasMask )
+		if (pPlayer->pev->weapons & (1 << WEAPON_GASMASK))
+		{
+			return FALSE;
+		}
+
+		//	pPlayer->m_iHasGasMask = 1;
+		pPlayer->pev->weapons |= (1 << WEAPON_GASMASK);
+
+		MESSAGE_BEGIN(MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev);
+		WRITE_STRING(STRING(pev->classname));
+		MESSAGE_END();
+
+		EMIT_SOUND(pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM);
+		return TRUE;
+	}
+};
+
+LINK_ENTITY_TO_CLASS(item_gasmask, CItemGasMask);
+
+
+
+
+// buz: head shield
+class CItemHeadShield : public CItem
+{
+	void Spawn(void)
+	{
+		Precache();
+		SET_MODEL(ENT(pev), "models/w_headshield.mdl");
+		CItem::Spawn();
+	}
+	void Precache(void)
+	{
+		PRECACHE_MODEL("models/w_headshield.mdl");
+		PRECACHE_SOUND("items/gunpickup2.wav");
+	}
+	BOOL MyTouch(CBasePlayer* pPlayer)
+	{
+		if (pPlayer->pev->weapons & (1 << WEAPON_HEADSHIELD))
+		{
+			return FALSE;
+		}
+
+		pPlayer->pev->weapons |= (1 << WEAPON_HEADSHIELD);
+
+		MESSAGE_BEGIN(MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev);
+		WRITE_STRING(STRING(pev->classname));
+		MESSAGE_END();
+
+		EMIT_SOUND(pPlayer->edict(), CHAN_ITEM, "items/gunpickup2.wav", 1, ATTN_NORM);
+		return TRUE;
+	}
+};
+
+LINK_ENTITY_TO_CLASS(item_headshield, CItemHeadShield);

@@ -769,6 +769,8 @@ void CBaseToggleWeapon::SecondaryAttack(void)
 			else
 				m_pPlayer->pev->maxspeed = gSkillData.plrSecondaryMaxSpeed;
 
+			m_pPlayer->m_iFOV = 60; // FIXME: get zoom values from weapon settings
+
 			// buz: set jump force
 			if (m_pMySpread->sec_jump != -1)
 				m_pPlayer->SetJumpHeight(m_pMySpread->sec_jump);
@@ -784,6 +786,8 @@ void CBaseToggleWeapon::SecondaryAttack(void)
 				m_pPlayer->pev->maxspeed = m_pMySpread->pri_speed;
 			else
 				m_pPlayer->pev->maxspeed = gSkillData.plrPrimaryMaxSpeed;
+
+			m_pPlayer->m_iFOV = 0; // FIXME: get zoom values from weapon settings
 
 			// buz: set jump force
 			if (m_pMySpread->pri_jump != -1)
@@ -853,9 +857,9 @@ void CBaseSpreadWeapon::DefPrimPunch()
 		//UTIL_SharedRandomFloat( m_pPlayer->random_seed, m_pMySpread->pri_minpunch[0], m_pMySpread->pri_maxpunch[0] ),
 		//UTIL_SharedRandomFloat( m_pPlayer->random_seed, m_pMySpread->pri_minpunch[1], m_pMySpread->pri_maxpunch[1] ),
 		//UTIL_SharedRandomFloat( m_pPlayer->random_seed, m_pMySpread->pri_minpunch[2], m_pMySpread->pri_maxpunch[2] )
-		m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT(m_pMySpread->pri_minpunch[0], m_pMySpread->pri_maxpunch[0]),
-	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT(m_pMySpread->pri_minpunch[1], m_pMySpread->pri_maxpunch[1]),
-	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT(m_pMySpread->pri_minpunch[2], m_pMySpread->pri_maxpunch[2])
+	RANDOM_FLOAT(m_pMySpread->pri_minpunch[0], m_pMySpread->pri_maxpunch[0]),
+	RANDOM_FLOAT(m_pMySpread->pri_minpunch[1], m_pMySpread->pri_maxpunch[1]),
+	RANDOM_FLOAT(m_pMySpread->pri_minpunch[2], m_pMySpread->pri_maxpunch[2])
 
 	);
 }
@@ -863,8 +867,8 @@ void CBaseSpreadWeapon::DefPrimPunch()
 void CBaseSpreadWeapon::DefSecPunch()
 {
 	m_pPlayer->ViewPunch(
-	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT(m_pMySpread->sec_minpunch[0], m_pMySpread->sec_maxpunch[0]),
-	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT(m_pMySpread->sec_minpunch[1], m_pMySpread->sec_maxpunch[1]),
-	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT(m_pMySpread->sec_minpunch[2], m_pMySpread->sec_maxpunch[2])
+	RANDOM_FLOAT(m_pMySpread->sec_minpunch[0], m_pMySpread->sec_maxpunch[0]),
+	RANDOM_FLOAT(m_pMySpread->sec_minpunch[1], m_pMySpread->sec_maxpunch[1]),
+	RANDOM_FLOAT(m_pMySpread->sec_minpunch[2], m_pMySpread->sec_maxpunch[2])
 	);
 }

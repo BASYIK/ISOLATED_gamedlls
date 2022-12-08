@@ -318,7 +318,7 @@ static brushdecal_t *R_AllocDecal( brushdecal_t *pdecal = NULL )
 	}
 
 	// if decal is already linked to a surface, unlink it.
-	R_UnlinkDecal( pdecal );
+	R_UnlinkDecal(pdecal);
 
 	return pdecal;	
 }
