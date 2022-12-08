@@ -133,6 +133,80 @@ float V_CalcBob( struct ref_params_s *pparams )
 
 extern cvar_t *cl_forwardspeed;
 
+#define HL2_BOB_CYCLE_MIN	0.1f
+#define HL2_BOB_CYCLE_MAX	0.4f
+#define HL2_BOB		0.1f
+#define HL2_BOB_UP		0.5f
+#define clamp( val, min, max ) ( ((val) > (max)) ? (max) : ( ((val) < (min)) ? (min) : (val) ) ) // thx BUzer
+
+float    g_lateralBob;
+float    g_verticalBob;
+
+float V_CalcNewBob(struct ref_params_s* pparams)
+{
+	static    float bobtime;
+	static    float lastbobtime;
+	float    cycle;
+
+	Vector    vel;
+	VectorCopy(pparams->simvel, vel);
+	vel[2] = 0;
+
+	if (pparams->onground == -1 || pparams->time == lastbobtime)
+	{
+		return 0.0f;
+	}
+
+	float speed = sqrt(vel[0] * vel[0] + vel[1] * vel[1]);
+
+	speed = clamp(speed, -320, 320);
+
+	float bob_offset = RemapVal(speed, 0, 320, 0.0f, 1.0f);
+
+	bobtime += (pparams->time - lastbobtime) * bob_offset;
+	lastbobtime = pparams->time;
+
+	//Calculate the vertical bob
+	cycle = bobtime - (int)(bobtime / HL2_BOB_CYCLE_MAX) * HL2_BOB_CYCLE_MAX;
+	cycle /= HL2_BOB_CYCLE_MAX;
+
+	if (cycle < HL2_BOB_UP)
+	{
+		cycle = M_PI * cycle / HL2_BOB_UP;
+	}
+	else
+	{
+		cycle = M_PI + M_PI * (cycle - HL2_BOB_UP) / (1.0 - HL2_BOB_UP);
+	}
+
+	g_verticalBob = speed * 0.015f;
+	g_verticalBob = g_verticalBob * 0.3 + g_verticalBob * 0.7 * sin(cycle);
+
+	g_verticalBob = clamp(g_verticalBob, -15.0f, 4.0f);
+
+	//Calculate the lateral bob
+	cycle = bobtime - (int)(bobtime / HL2_BOB_CYCLE_MAX * 2) * HL2_BOB_CYCLE_MAX * 2;
+	cycle /= HL2_BOB_CYCLE_MAX * 2;
+
+	if (cycle < HL2_BOB_UP)
+	{
+		cycle = M_PI * cycle / HL2_BOB_UP;
+	}
+	else
+	{
+		cycle = M_PI + M_PI * (cycle - HL2_BOB_UP) / (1.0 - HL2_BOB_UP);
+	}
+
+	g_lateralBob = speed * 0.004f;
+	g_lateralBob = g_lateralBob * 0.3 + g_lateralBob * 0.7 * sin(cycle);
+
+	g_lateralBob = clamp(g_lateralBob, -7.0f, 4.0f);
+
+	//NOTENOTE: We don't use this return value in our case (need to restructure the calculation function setup!)
+	return 0.0f;
+}
+
+
 static struct
 {
 	float	pitchvel;
@@ -268,7 +342,6 @@ void V_CalcViewModelLag( ref_params_t *pparams, Vector &origin, Vector &angles, 
 	static Vector m_vecLastFacing;
 	Vector vOriginalOrigin = origin;
 	Vector vOriginalAngles = angles;
-
 	// Calculate our drift
 	Vector forward, right, up;
 
@@ -280,7 +353,7 @@ void V_CalcViewModelLag( ref_params_t *pparams, Vector &origin, Vector &angles, 
 
 		vDifference = forward - m_vecLastFacing;
 
-		float flSpeed = 5.0f;
+		float flSpeed = 4.0f;
 
 		// If we start to lag too far behind, we'll increase the "catch up" speed.
 		// Solves the problem with fast cl_yawspeed, m_yaw or joysticks rotating quickly.
@@ -297,7 +370,7 @@ void V_CalcViewModelLag( ref_params_t *pparams, Vector &origin, Vector &angles, 
 		m_vecLastFacing = m_vecLastFacing + vDifference * ( flSpeed * pparams->frametime );
 		// Make sure it doesn't grow out of control!!!
 		m_vecLastFacing = m_vecLastFacing.Normalize();
-		origin = origin + (vDifference * -1.0f) * flSpeed;
+		origin = origin + (vDifference * -1.0f) * 1.0;
 	}
 
 	AngleVectors( original_angles, forward, right, up );
@@ -321,9 +394,9 @@ void V_CalcViewModelLag( ref_params_t *pparams, Vector &origin, Vector &angles, 
 	else
 	{
 		// FIXME: These are the old settings that caused too many exposed polys on some models
-		origin = origin + forward * ( -pitch * 0.035f );
-		origin = origin + right * ( -pitch * 0.03f );
-		origin = origin + up * ( -pitch * 0.02f );
+		origin = origin + forward * (-pitch * 0.00f);
+		origin = origin + right * (-pitch * 0.00f);
+		origin = origin + up * (-pitch * 0.00f);
 	}
 }
 
@@ -894,12 +967,12 @@ void V_CalcFirstPersonRefdef( struct ref_params_s *pparams )
 	VectorCopy(pparams->crosshairangle, g_CrosshairAngle); // save it for crosshair rendering
 
 	V_DriftPitch( pparams );
-
-	float bob = V_CalcBob( pparams );
+	cl_entity_t* view = GET_VIEWMODEL();
+	float bob;
 
 	pparams->vieworg = pparams->simorg;
 	pparams->vieworg += pparams->viewheight;
-	pparams->vieworg.z += bob;
+	//pparams->vieworg.z += bob;
 
 	pparams->viewangles = pparams->cl_viewangles;
 
@@ -917,7 +990,6 @@ void V_CalcFirstPersonRefdef( struct ref_params_s *pparams )
 	// offsets
 	AngleVectors( pparams->cl_viewangles, pparams->forward, pparams->right, pparams->up );
 
-	cl_entity_t *view = GET_VIEWMODEL();
 	Vector lastAngles = view->angles = pparams->cl_viewangles;
 
 	V_CalcGunAngle( pparams );
@@ -930,13 +1002,38 @@ void V_CalcFirstPersonRefdef( struct ref_params_s *pparams )
 	// Let the viewmodel shake at about 10% of the amplitude
 	gEngfuncs.V_ApplyShake( view->origin, view->angles, 0.9f );
 
+	V_CalcNewBob(pparams);
+
+
+	// Apply bob, but scaled down to 40%
+	VectorMA(view->origin, g_verticalBob * 0.1f, pparams->forward, view->origin);
+
+	// Z bob a bit more
+	view->origin[2] += g_verticalBob * 0.1f;
+
+	// bob the angles
+	view->angles[ROLL] += g_verticalBob * 0.3f;
+	view->angles[PITCH] -= g_verticalBob * 0.8f;
+
+	view->angles[YAW] -= g_lateralBob * 0.5f;
+
+	VectorMA(view->origin, g_lateralBob * 0.8f, pparams->right, view->origin);
+
+	for (int i = 0; i < 2; i++)
+	{
+		pparams->viewangles[ROLL] += bob * 0.3;
+		pparams->viewangles[YAW] += bob * 0.2;
+	}
+
+	pparams->vieworg[ROLL] -= sqrt(bob * bob) * 2 * pparams->up[ROLL];
+	view->origin[ROLL] -= sqrt(bob * bob) * 2 * pparams->up[ROLL];
+
+
 	view->origin += pparams->forward * bob * 0.4f;
 	view->origin.z += bob;
-
-	view->angles[PITCH] -= bob * 0.3f;
-	view->angles[YAW] -= bob * 0.5f;
-	view->angles[ROLL] -= bob * 1.0f;
 	view->origin.z -= 1;
+
+	bob = V_CalcBob(pparams);
 
 	// fudge position around to keep amount of weapon visible
 	// roughly equal with different FOV

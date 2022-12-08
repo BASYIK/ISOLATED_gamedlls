@@ -44,6 +44,7 @@ DLL_GLOBAL short	g_sModelIndexWExplosion;// holds the index for the underwater e
 DLL_GLOBAL short	g_sModelIndexBubbles;// holds the index for the bubbles model
 DLL_GLOBAL short	g_sModelIndexBloodDrop;// holds the sprite index for the initial blood
 DLL_GLOBAL short	g_sModelIndexBloodSpray;// holds the sprite index for splattered blood
+DLL_GLOBAL unsigned short m_usSmokePuff; // buz - smoke event
 
 ItemInfo CBasePlayerItem::ItemInfoArray[MAX_WEAPONS];
 AmmoInfo CBasePlayerItem::AmmoInfoArray[MAX_AMMO_SLOTS];
@@ -316,9 +317,14 @@ void W_Precache(void)
 
 	// custom items...
 
+	// custom items...
 
-	// PARANOIA
-	// 
+	// common world objects
+	UTIL_PrecacheOther("item_suit");
+	UTIL_PrecacheOther("item_battery");
+	UTIL_PrecacheOther("item_antidote");
+	UTIL_PrecacheOther("item_security");
+	UTIL_PrecacheOther("item_longjump");
 	UTIL_PrecacheOther("item_gasmask"); // buz
 	UTIL_PrecacheOther("item_headshield"); // buz
 
@@ -354,41 +360,31 @@ void W_Precache(void)
 	UTIL_PrecacheOtherWeapon("weapon_tt33");
 	UTIL_PrecacheOther("ammo_tt33");
 
-	// 
-	// common world objects
-	UTIL_PrecacheOther( "item_suit" );
-	UTIL_PrecacheOther( "item_battery" );
-	UTIL_PrecacheOther( "item_antidote" );
-	UTIL_PrecacheOther( "item_security" );
-	UTIL_PrecacheOther( "item_longjump" );
-
 	// shotgun
-	UTIL_PrecacheOtherWeapon( "weapon_shotgun" );
-	UTIL_PrecacheOther( "ammo_buckshot" );
+	UTIL_PrecacheOtherWeapon("weapon_shotgun");
+	UTIL_PrecacheOther("ammo_buckshot");
 
 	// crowbar
-	UTIL_PrecacheOtherWeapon( "weapon_crowbar" );
-	UTIL_PrecacheOtherWeapon("weapon_knife");
-
-	// glock
-	UTIL_PrecacheOtherWeapon( "weapon_9mmhandgun" );
-	UTIL_PrecacheOther( "ammo_9mmclip" );
+	UTIL_PrecacheOtherWeapon("weapon_crowbar");
 
 	// mp5
-	UTIL_PrecacheOtherWeapon( "weapon_9mmAR" );
-	UTIL_PrecacheOther( "ammo_9mmAR" );
-	UTIL_PrecacheOther( "ammo_ARgrenades" );
+	UTIL_PrecacheOtherWeapon("weapon_9mmAR");
+	UTIL_PrecacheOther("ammo_9mmAR");
+	UTIL_PrecacheOther("ammo_ARgrenades");
 
-	// rpg
-	UTIL_PrecacheOtherWeapon( "weapon_rpg" );
-	UTIL_PrecacheOther( "ammo_rpgclip" );
 	// hand grenade
 	UTIL_PrecacheOtherWeapon("weapon_handgrenade");
 
-	if ( g_pGameRules->IsDeathmatch() )
-	{
-		UTIL_PrecacheOther( "weaponbox" );// container for dropped deathmatch weapons
-	}
+	// glock
+	UTIL_PrecacheOtherWeapon("weapon_9mmhandgun");
+	UTIL_PrecacheOther("ammo_9mmclip");
+	UTIL_PrecacheOther("ammo_9mmbox"); //LRC
+
+	// Wargon: Прекэш для RPG перемещен сюда.
+	UTIL_PrecacheOtherWeapon("weapon_rpg");
+	UTIL_PrecacheOther("ammo_rpgclip");
+
+	UTIL_PrecacheOther("weaponbox");// container for dropped deathmatch weapons
 
 	g_sModelIndexFireball = PRECACHE_MODEL ("sprites/zerogxplode.spr");// fireball
 	g_sModelIndexWExplosion = PRECACHE_MODEL ("sprites/WXplo1.spr");// underwater fireball
@@ -400,10 +396,12 @@ void W_Precache(void)
 	g_sModelIndexLaser = PRECACHE_MODEL( (char *)g_pModelNameLaser );
 	g_sModelIndexLaserDot = PRECACHE_MODEL("sprites/laserdot.spr");
 
+	m_usSmokePuff = PRECACHE_EVENT(1, "events/smokepuff.sc"); // buz
+
+
 	// used by explosions
 	PRECACHE_MODEL("models/grenade.mdl");
 	PRECACHE_MODEL("sprites/explode1.spr");
-	PRECACHE_MODEL("models/m_flash1.mdl");
 
 	PRECACHE_SOUND("weapons/debris1.wav");// explosion aftermaths
 	PRECACHE_SOUND("weapons/debris2.wav");// explosion aftermaths
@@ -417,6 +415,14 @@ void W_Precache(void)
 	PRECACHE_SOUND("weapons/bullet_hit2.wav");	// hit by bullet
 
 	PRECACHE_SOUND("items/weapondrop1.wav");// weapon falls to the ground
+
+	// buz
+//	PRECACHE_MODEL ("sprites/confrag.spr");
+//	PRECACHE_MODEL ("sprites/woodfrag.spr");
+	PRECACHE_MODEL("sprites/wsplash_x.spr");
+
+	// buz: used for gasmask
+	PRECACHE_MODEL("models/can.mdl");
 
 	// buz:
 	LoadSpreadTable("spread_settings.txt");
@@ -1687,210 +1693,3 @@ void CBasePlayerWeapon::DefaultFireIronsight(CBasePlayer* m_pPlayer, int cShots,
 	if (!LeftSpread)
 		LeftSpread = 1;
 }
-
-enum ak47_e
-{
-	AK47_IDLE_A = 0,
-	AK47_RELOAD_A,
-	AK47_DRAW,
-	AK47_SHOOT_A,
-	AK47_IDLE_B,
-	AK47_CHANGETO_B,
-	AK47_CHANGETO_A,
-	AK47_SHOOT_B,
-	AK47_RELOAD_B,
-};
-
-
-class CAK47 : public CBasePlayerWeapon
-{
-	DECLARE_CLASS(CAK47, CBasePlayerWeapon);
-public:
-	virtual void Spawn(void);
-	virtual void Precache(void);
-	virtual int iItemSlot(void) { return 3; }
-	virtual int GetItemInfo(ItemInfo* p);
-	virtual int AddToPlayer(CBasePlayer* pPlayer);
-	virtual void PrimaryAttack(void);
-	virtual BOOL Deploy(void);
-	virtual void Reload(void);
-	virtual void WeaponIdle(void);
-	virtual void SecondaryAttack(void);
-
-private:
-	int m_iShell;
-};
-LINK_ENTITY_TO_CLASS(weapon_akm, CAK47);
-
-void CAK47::SecondaryAttack(void)
-{
-	// do not switch zoom when player stay button is pressed
-	if (m_fInIronsightUse)
-		return;
-
-	m_fInIronsightUse = 1;
-
-	if (m_fInIronsight)
-	{
-		SendWeaponAnim(AK47_CHANGETO_A);
-		g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 140);
-		m_fInIronsight = 0;
-	}
-	else
-	{
-		SendWeaponAnim(AK47_CHANGETO_B);
-		g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 120);
-		m_fInIronsight = 1;
-	}
-	m_pPlayer->m_flNextAttack = gpGlobals->time + 0.3;
-	m_flNextSecondaryAttack = m_flNextPrimaryAttack = m_pPlayer->m_flNextAttack;
-	m_flTimeWeaponIdle = gpGlobals->time + 5.0;
-}
-
-
-void CAK47::Spawn()
-{
-	Precache();
-	SET_MODEL(ENT(pev), "models/w_ak74.mdl");
-	m_iId = WEAPON_AKM;
-
-	m_iDefaultAmmo = 120;
-
-	wepspread_s.MaxSpreadX = 2.2;
-	wepspread_s.MaxSpreadY = 3.5;
-
-	wepspread_s.SpreadX = 2;
-	wepspread_s.SpreadY = 2;
-
-	wepspread2_s.MaxSpreadX2 = 2;
-	wepspread2_s.MaxSpreadY2 = 2;
-
-	wepspread2_s.SpreadX2 = 2;
-	wepspread2_s.SpreadY2 = 1;
-
-	FallInit();
-}
-
-void CAK47::Precache(void)
-{
-	PRECACHE_MODEL("models/v_akm.mdl");
-	PRECACHE_MODEL("models/p_ak74.mdl");
-	PRECACHE_MODEL("models/w_ak74.mdl");
-
-	m_iShell = PRECACHE_MODEL("models/ak74_shell.mdl");
-
-	PRECACHE_SOUND("weapons/akm/akm.wav");
-}
-
-int CAK47::GetItemInfo(ItemInfo* p)
-{
-	p->pszName = STRING(pev->classname);
-	p->pszAmmo1 = "ammo_ak47";
-	p->iMaxAmmo1 = 120;
-	p->pszAmmo2 = NULL;
-	p->iMaxAmmo2 = -1;
-	p->iMaxClip = 30;
-	p->iSlot = 2;
-	p->iPosition = 0;
-	p->iFlags = 0;
-	p->iId = m_iId = WEAPON_AKM;
-	p->iWeight = 25;
-
-	return 1;
-}
-
-int CAK47::AddToPlayer(CBasePlayer* pPlayer)
-{
-	if (CBasePlayerWeapon::AddToPlayer(pPlayer))
-	{
-		MESSAGE_BEGIN(MSG_ONE, gmsgWeapPickup, NULL, pPlayer->pev);
-		WRITE_BYTE(m_iId);
-		MESSAGE_END();
-		return TRUE;
-	}
-	return FALSE;
-}
-
-BOOL CAK47::Deploy()
-{
-	g_engfuncs.pfnSetClientMaxspeed(m_pPlayer->edict(), 140);
-	return DefaultDeploy("models/v_akm.mdl", "models/p_ak74.mdl", AK47_DRAW, "ak47");
-}
-
-void CAK47::PrimaryAttack()
-{
-	if (m_fInIronsight)
-	{
-		DefaultFireIronsight(m_pPlayer, 1, wepspread2_s, 14, AK47_SHOOT_B, "weapons/akm/akm.wav", 20);
-	}
-	else
-	{
-		DefaultFire(m_pPlayer, 1, wepspread_s, 14, AK47_SHOOT_A, "weapons/akm/akm.wav", 20);
-	}
-
-	m_flNextPrimaryAttack = gpGlobals->time + 0.1;
-	m_flTimeWeaponIdle = gpGlobals->time + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 1.085, 2.085);
-
-}
-
-void CAK47::Reload(void)
-{
-	if (m_fInIronsight)
-	{
-		DefaultReload(30, AK47_RELOAD_B, 2.45);
-	}
-	else
-	{
-		DefaultReload(30, AK47_RELOAD_A, 2.45);
-	}
-}
-
-void CAK47::WeaponIdle(void)
-{
-	ResetEmptySound();
-	m_fInIronsightUse = 0;
-	m_pPlayer->GetAutoaimVector(AUTOAIM_5DEGREES);
-
-	if (m_flTimeWeaponIdle > gpGlobals->time)
-		return;
-
-	if (m_fInIronsight)
-	{
-		SendWeaponAnim(AK47_IDLE_B);
-	}
-	else
-	{
-		SendWeaponAnim(AK47_IDLE_A);
-	}
-
-	m_flTimeWeaponIdle = UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
-}
-
-class CAKMAmmo : public CBasePlayerAmmo
-{
-	DECLARE_CLASS(CAKMAmmo, CBasePlayerAmmo);
-
-	void Spawn(void)
-	{
-		Precache();
-		SET_MODEL(ENT(pev), "models/w_ak74ammo.mdl");
-		CBasePlayerAmmo::Spawn();
-	}
-	void Precache(void)
-	{
-		PRECACHE_MODEL("models/w_ak74ammo.mdl");
-		PRECACHE_SOUND("items/9mmclip1.wav");
-	}
-	BOOL AddAmmo(CBaseEntity* pOther)
-	{
-		if (pOther->GiveAmmo(30, "ammo_ak47", 120) != -1)
-		{
-			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
-			return TRUE;
-		}
-		return FALSE;
-	}
-};
-
-LINK_ENTITY_TO_CLASS(ammo_akm, CAKMAmmo);
-//

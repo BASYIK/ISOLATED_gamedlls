@@ -191,7 +191,7 @@ void CAPS::Attack1()
 	//PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usAPS, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, iAnim, (int)(spread * 255), (m_iClip == 0) ? 1 : 0, 0);
 
 	//PLAYBACK_EVENT(flags, m_pPlayer->edict(), m_usAPS);
-	DefSecPunch();
+	DefPrimPunch();
 
 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		// HEV suit - indicate out of ammo condition

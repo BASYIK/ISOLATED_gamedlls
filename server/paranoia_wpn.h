@@ -158,34 +158,6 @@ private:
 /*
 
 
-class CAKS : public CBaseToggleWeapon
-{
-public:
-	void	Spawn(void);
-	void	Precache(void);
-	int		iItemSlot(void) { return 3; }
-	int		GetItemInfo(ItemInfo *p);
-	int		AddToPlayer(CBasePlayer *pPlayer);
-	BOOL	Deploy(void);
-
-	void Attack1(void);
-	void Attack2(void);
-	void Reload1(void);
-	void Reload2(void);
-	void Idle1(void);
-	void Idle2(void);
-	int ChangeModeTo1(void);
-	int ChangeModeTo2(void);
-	//	Vector GetSpreadVec1( void );
-	//	Vector GetSpreadVec2( void );
-
-	int m_iShell;
-
-private:
-	unsigned short m_usAKS;
-};
-
-
 // buz: class declaration moved here
 class CMP5 : public CBaseToggleWeapon
 {

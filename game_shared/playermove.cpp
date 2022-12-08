@@ -2555,16 +2555,41 @@ PM_DropPunchAngle
 
 =============
 */
+#define PUNCH_DAMPING		9.0f		// bigger number makes the response more damped, smaller is less damped
+// currently the system will overshoot, with larger damping values it won't
+#define PUNCH_SPRING_CONSTANT	65.0f	// bigger number increases the speed at which the view corrects
+
+#define clamp( val, min, max ) ( ((val) > (max)) ? (max) : ( ((val) < (min)) ? (min) : (val) ) )
+
 void PM_DropPunchAngle(Vector& punchangle)
 {
-	float	len;
+	float damping;
+	float springForceMagnitude;
+	float len = punchangle.Length();
 
-	len = punchangle.Length();
-	punchangle = punchangle.Normalize();
+	if (len > 0.001 || pmove->vuser3.Length() > 0.001)
+	{
+		VectorMA(punchangle, pmove->frametime, pmove->vuser3, punchangle);
+		damping = 1 - (PUNCH_DAMPING * pmove->frametime);
 
-	len -= (10.0 + len * 0.5) * pmove->frametime;
-	len = max(len, 0.0);
-	punchangle *= len;
+		if (damping < 0)
+		{
+			damping = 0;
+		}
+		pmove->vuser3 *= damping;
+
+		// torsional spring
+		// UNDONE: Per-axis spring constant?
+		springForceMagnitude = PUNCH_SPRING_CONSTANT * pmove->frametime;
+		springForceMagnitude = clamp(springForceMagnitude, 0, 2);
+
+		VectorMA(pmove->vuser3, -springForceMagnitude, punchangle, pmove->vuser3);
+
+		// don't wrap around
+		punchangle[0] = clamp(punchangle[0], -89, 89);
+		punchangle[1] = clamp(punchangle[1], -179, 179);
+		punchangle[2] = clamp(punchangle[2], -89, 89);
+	}
 }
 
 /*

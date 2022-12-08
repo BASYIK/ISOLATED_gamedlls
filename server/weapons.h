@@ -80,7 +80,7 @@ public:
 #define WEAPON_HORNETGUN		11
 #define WEAPON_HANDGRENADE		12
 #define WEAPON_TRIPMINE			13
-#define WEAPON_SATCHEL			14
+#define WEAPON_AK47			14
 #define WEAPON_SNARK			15
 
 // buz: paranoia weapons goes here

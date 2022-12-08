@@ -184,7 +184,7 @@ void CRPK::Attack1()
 
 	//	PLAYBACK_EVENT_FULL(FEV_NOTHOST, m_pPlayer->edict(), m_usRPK, 0.0, (float *)&g_vecZero, (float *)&g_vecZero, vecDir.x, vecDir.y, RPK_SHOOT_B, (int)(spread * 255), 0, 0 );
 
-	DefSecPunch();
+	DefPrimPunch();
 
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = gpGlobals->time + 0.1;
 	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT(10, 15);

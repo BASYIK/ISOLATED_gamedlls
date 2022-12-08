@@ -3122,11 +3122,10 @@ void CBasePlayer::Spawn( void )
 
 // buz
 void CBasePlayer::ViewPunch(float p, float y, float r)
-{
-	//basyik
-	pev->punchangle.x -= p *1.5;
-	pev->punchangle.y = y * 1.5;
-	pev->punchangle.z = r * 1.5;
+{// vuser3 is punch speed
+	pev->vuser3[0] -= p * 20;
+	pev->vuser3[1] += y * 20;
+	pev->vuser3[2] += r * 20;
 }
 
 void CBasePlayer :: CheckCompatibility( void )
