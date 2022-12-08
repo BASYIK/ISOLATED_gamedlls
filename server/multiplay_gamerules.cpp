@@ -1086,14 +1086,14 @@ BOOL CHalfLifeMultiplay :: PlayFootstepSounds( CBasePlayer *pl, float fvol )
 
 BOOL CHalfLifeMultiplay :: FAllowFlashlight( void ) 
 { 
-	return flashlight.value != 0; 
+	return TRUE; 
 }
 
 //=========================================================
 //=========================================================
 BOOL CHalfLifeMultiplay :: FAllowMonsters( void )
 {
-	return ( allowmonsters.value != 0 );
+	return TRUE;
 }
 
 //=========================================================

@@ -99,6 +99,21 @@ public:
 
 static CBaseBoneSetup g_boneSetup;
 
+
+float SequenceDuration(void* pmodel, float poseparams[], int iSequence)
+{
+	studiohdr_t* pstudiohdr;
+
+	pstudiohdr = (studiohdr_t*)pmodel;
+	if (!pstudiohdr)
+		return 0.1f;
+
+	if (iSequence < 0 || iSequence >= pstudiohdr->numseq)
+		return 0.1f;
+
+	g_boneSetup.SetStudioPointers(pstudiohdr, poseparams);
+	return g_boneSetup.LocalDuration(iSequence);
+}
 //================================================================================================
 //			HUD_GetStudioModelInterface
 //	Export this function for the engine to use the studio renderer class to render objects.

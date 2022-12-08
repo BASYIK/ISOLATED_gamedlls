@@ -16,7 +16,7 @@
 #define WEAPONS_H
 
 #include "effects.h"
-
+#include "player.h"
 class CBasePlayer;
 extern int gmsgWeapPickup;
 
@@ -80,7 +80,7 @@ public:
 #define WEAPON_HORNETGUN		11
 #define WEAPON_HANDGRENADE		12
 #define WEAPON_TRIPMINE			13
-#define WEAPON_AK47			14
+#define WEAPON_SATCHEL			14
 #define WEAPON_SNARK			15
 
 // buz: paranoia weapons goes here
@@ -91,6 +91,7 @@ public:
 #define WEAPON_AKM				20
 #define WEAPON_GROZA			21
 #define WEAPON_TT33			25
+#define WEAPON_AK47			26
 
 #define WEAPON_GASMASK		22
 #define WEAPON_HEADSHIELD	23
@@ -311,7 +312,6 @@ public:
 	virtual int GetItemInfo(ItemInfo *p) { return 0; };	// returns 0 if struct not filled out
 	virtual BOOL CanDeploy( void ) { return TRUE; };
 	virtual BOOL Deploy( ) { return TRUE; };		// returns is deploy was successful
-		 
 
 	virtual BOOL CanHolster( void ) { return TRUE; };		// can this weapon be put away right now?
 	virtual void Holster( void );
@@ -417,8 +417,11 @@ public:
 
 	virtual BOOL CanDeploy( void );
 	virtual BOOL IsUseable( void );
+	float SetNextIdle(float delay) { return m_flTimeWeaponIdle = gpGlobals->time + delay; }
+	float SequenceDuration(void) { return CBaseAnimating::SequenceDuration(m_pPlayer->pev->weaponanim); }
 	BOOL DefaultDeploy( char *szViewModel, char *szWeaponModel, int iAnim, char *szAnimExt, int skiplocal = 0, int body = 0 );
 	int DefaultReload( int iClipSize, int iAnim, float fDelay, int body = 0 );
+	float SetNextAttack(float delay) { return m_pPlayer->m_flNextAttack = gpGlobals->time + delay; }
 
 	virtual void ItemPostFrame( void );	// called each frame by the player PostThink
 	// called by CBasePlayerWeapons ItemPostFrame()

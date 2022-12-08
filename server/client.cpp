@@ -694,6 +694,75 @@ void StartFrame( void )
 	g_ulFrameCount++;
 }
 
+void PrecacheMaterialSounds(void)
+{
+	ALERT(at_aiconsole, "loading materials.def\n");
+
+	char* afile = (char*)LOAD_FILE("scripts/materials.def", NULL);
+
+	if (!afile)
+	{
+		ALERT(at_error, "Cannot open file \"scripts/materials.def\"\n");
+		return;
+	}
+
+	char* pfile = afile;
+	char token[256];
+	int current = 0;
+
+	while (pfile != NULL)
+	{
+		pfile = COM_ParseFile(pfile, token);
+		if (!pfile) break;
+
+		// skip the material name
+
+		// read opening brace
+		pfile = COM_ParseFile(pfile, token);
+		if (!pfile) break;
+
+		if (token[0] != '{')
+		{
+			ALERT(at_error, "found %s when expecting {\n", token);
+			break;
+		}
+
+		while (pfile != NULL)
+		{
+			pfile = COM_ParseFile(pfile, token);
+			if (!pfile)
+			{
+				ALERT(at_error, "EOF without closing brace\n");
+				goto getout;
+			}
+
+			// description end goto next material
+			if (token[0] == '}')
+			{
+				break;
+			}
+			else if (!Q_stricmp(token, "impact_sound"))
+			{
+				while ((pfile = COM_ParseLine(pfile, token)) != NULL)
+				{
+					if (!Q_strlen(token)) break; // end of line
+					PRECACHE_SOUND(token); // be warning. In GoldSrc this method invoke to crash engine
+				}
+			}
+			else if (!Q_stricmp(token, "step_sound"))
+			{
+				while ((pfile = COM_ParseLine(pfile, token)) != NULL)
+				{
+					if (!Q_strlen(token)) break; // end of line
+					PRECACHE_SOUND(token); // be warning. In GoldSrc this method invoke to crash engine
+				}
+			}
+		}
+	}
+getout:
+	FREE_FILE(afile);
+}
+
 void EndFrame( void )
 {
 	if ( g_fGameOver )
@@ -784,6 +853,16 @@ void ClientPrecache( void )
 	PRECACHE_SOUND( SOUND_FLASHLIGHT_ON );
 	PRECACHE_SOUND( SOUND_FLASHLIGHT_OFF );
 
+	// buz
+	PRECACHE_SOUND(SOUND_GASMASK_ON);
+	PRECACHE_SOUND(SOUND_GASMASK_OFF);
+
+	// buz
+	PRECACHE_SOUND(SOUND_SHIELD_ON);
+	PRECACHE_SOUND(SOUND_SHIELD_OFF);
+
+	// buz
+	PRECACHE_SOUND("common/headshot.wav");
 // player gib sounds
 	PRECACHE_SOUND("common/bodysplat.wav");		               
 
@@ -813,6 +892,15 @@ void ClientPrecache( void )
 	PRECACHE_SOUND("player/geiger3.wav");
 	PRECACHE_SOUND("player/geiger2.wav");
 	PRECACHE_SOUND("player/geiger1.wav");
+
+	// buz
+	PRECACHE_SOUND("items/gasm_breath1.wav");
+	PRECACHE_SOUND("items/gasm_breath2.wav");
+	PRECACHE_SOUND("items/gasm_breath3.wav");
+	PRECACHE_SOUND("items/gasm_breath4.wav");
+
+	PRECACHE_SOUND("items/painkiller_use.wav");
+
 
 	if (giPrecacheGrunt)
 		UTIL_PrecacheOther("monster_human_grunt");

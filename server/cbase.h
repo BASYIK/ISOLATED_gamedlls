@@ -924,6 +924,7 @@ public:
 	int GetHitboxSetByName( const char *szName );
 	void SetSequenceBox( void );
 	CStudioBoneSetup *GetBoneSetup();
+	float SequenceDuration(int iSequence);
 
 	// animation needs
 	float	m_flFrameRate;	// computed FPS for current sequence

@@ -204,9 +204,7 @@ void CGroza::Reload2()
 	if (DefaultReload( GROZA_MAX_CLIP, GROZA_RELOAD, 2.3 ))
 	{
 		CBaseToggleWeapon::SecondaryAttack(); // remove scope
-		m_pPlayer->m_flNextAttack = gpGlobals->time + 2.3;
-		m_flNextSecondaryAttack = m_flNextPrimaryAttack = m_pPlayer->m_flNextAttack;
-		m_flTimeWeaponIdle = gpGlobals->time + 2.3 + 0.5;
+		SetNextAttack(SequenceDuration());
 	}
 }
 

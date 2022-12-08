@@ -49,6 +49,7 @@ float GetPoseParameter( void *pmodel, int iParameter, float *poseparams );
 int FindHitboxSetByName( void *pmodel, const char *name );
 CStudioBoneSetup *GetBaseBoneSetup( int modelindex, float *poseparams );
 
+float SequenceDuration(void* pmodel, float poseparams[], int iSequence);
 // From /engine/studio.h
 #define STUDIO_LOOPING		0x0001
 

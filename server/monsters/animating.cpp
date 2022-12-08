@@ -52,7 +52,13 @@ void *CBaseAnimating :: GetModelPtr( int modelindex )
 		return mod->cache.data;
 	return NULL;
 }
-
+// DO NOT USE ( NOT WORKING )
+//=========================================================
+//=========================================================
+float CBaseAnimating::SequenceDuration(int iSequence)
+{
+	return ::SequenceDuration(GetModelPtr(), m_flPoseParameter, iSequence) * pev->framerate;
+}
 //=========================================================
 // StudioFrameAdvance - advance the animation frame up to the current time
 // if an flInterval is passed in, only advance animation that number of seconds

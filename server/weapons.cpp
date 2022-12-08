@@ -402,6 +402,7 @@ void W_Precache(void)
 	// used by explosions
 	PRECACHE_MODEL("models/grenade.mdl");
 	PRECACHE_MODEL("sprites/explode1.spr");
+	PRECACHE_MODEL("models/m_flash1.mdl");
 
 	PRECACHE_SOUND("weapons/debris1.wav");// explosion aftermaths
 	PRECACHE_SOUND("weapons/debris2.wav");// explosion aftermaths
@@ -969,7 +970,7 @@ BOOL CBasePlayerWeapon :: DefaultDeploy( char *szViewModel, char *szWeaponModel,
 	SendWeaponAnim( iAnim, skiplocal, body );
 
 	m_pPlayer->m_flNextAttack = gpGlobals->time + 0.5;
-	m_flTimeWeaponIdle = gpGlobals->time + 1.0;
+	m_flTimeWeaponIdle = gpGlobals->time + 3.0;
 
 	return TRUE;
 }
