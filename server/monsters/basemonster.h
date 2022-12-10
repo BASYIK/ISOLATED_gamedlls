@@ -107,6 +107,7 @@ public:
 	string_t		m_iszTriggerTarget;// name of target that should be fired. 
 
 	Vector		m_HackedGunPos;	// HACK until we can query end of gun
+	int					m_iUseAlertAnims; // buz: start in alert state
 
 	BOOL		m_bHaveWeapons;	// user-specified weapon bits (don't save\restore this)
 

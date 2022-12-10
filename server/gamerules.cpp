@@ -317,6 +317,14 @@ void CGameRules::RefreshSkillData ( void )
 	// Wargon: looting
 	gSkillData.maxDeadEnemyAmmo = GetSkillCvar("sk_dead_enemy_ammo");
 
+
+	gSkillData.MilDmgKick = GetSkillCvar("sk_mil_kick"); // buz
+	gSkillData.milHealth = GetSkillCvar("sk_mil_health"); // buz
+	gSkillData.alphaHealth = GetSkillCvar("sk_alpha_health"); // buz
+	gSkillData.terrorHealth = GetSkillCvar("sk_terror_health"); // buz
+	gSkillData.cloneHealth = GetSkillCvar("sk_clone_health"); // buz
+	gSkillData.cloneHealthMutant = GetSkillCvar("sk_clone_health_mutant"); // basyik
+	
 	// buz: paranoia weapons
 	gSkillData.plrDmgAps = GetSkillCvar("sk_plr_aps");
 	gSkillData.plrDmgBarret = GetSkillCvar("sk_plr_barret");

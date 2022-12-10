@@ -541,8 +541,8 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 	if ( addDefault )
 	{
 		pPlayer->GiveNamedItem( "weapon_crowbar" );
-		pPlayer->GiveNamedItem( "weapon_9mmhandgun" );
-		pPlayer->GiveAmmo( 68, "9mm", _9MM_MAX_CARRY );// 4 full reloads
+		pPlayer->GiveNamedItem( "weapon_aps" );
+		pPlayer->GiveAmmo( 100, "aps", APS_MAX_CARRY );// 4 full reloads
 	}
 }
 
@@ -562,7 +562,7 @@ float CHalfLifeMultiplay :: FlPlayerSpawnTime( CBasePlayer *pPlayer )
 
 BOOL CHalfLifeMultiplay :: AllowAutoTargetCrosshair( void )
 {
-	return ( aimcrosshair.value != 0 );
+	return FALSE;
 }
 
 //=========================================================

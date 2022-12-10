@@ -190,7 +190,7 @@ void CGroza::Attack2()
 	EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/groza_fire.wav", RANDOM_FLOAT(0.92, 1.0), ATTN_NORM, 0, 98 + RANDOM_LONG(0, 3));
 
 	DefSecPunch();
-	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
+	m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.15;
 	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT(10, 15);
 }
 
@@ -261,6 +261,7 @@ int CGroza::ChangeModeTo2()
 	}
 
 //	m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 30;
+	m_pPlayer->pev->fov = m_pPlayer->m_iFOV = 30;
 
 	m_pPlayer->m_flNextAttack = gpGlobals->time + 0.5;
 	m_flNextSecondaryAttack = m_flNextPrimaryAttack = m_pPlayer->m_flNextAttack;

@@ -93,6 +93,82 @@ void V_Init(void)
 	ADD_COMMAND("centerview", V_StartPitchDrift);
 }
 
+#define HL2_BOB_CYCLE_MIN	0.1f
+#define HL2_BOB_CYCLE_MAX	0.3f
+#define HL2_BOB		0.1f
+#define HL2_BOB_UP		0.5f
+
+#define clamp( val, min, max ) ( ((val) > (max)) ? (max) : ( ((val) < (min)) ? (min) : (val) ) )
+
+float    g_lateralBob;
+float    g_verticalBob;
+
+
+float V_CalcNewBob(struct ref_params_s* pparams)
+{
+	static    float bobtime;
+	static    float lastbobtime;
+	float    cycle;
+
+	Vector    vel;
+	VectorCopy(pparams->simvel, vel);
+	vel[2] = 0;
+
+	if (pparams->onground == -1 || pparams->time == lastbobtime)
+	{
+		return 0.0f;
+	}
+
+	float speed = sqrt(vel[0] * vel[0] + vel[1] * vel[1]);
+
+	speed = clamp(speed, -320, 320);
+
+	float bob_offset = RemapVal(speed, 0, 320, 0.0f, 1.0f);
+
+	bobtime += (pparams->time - lastbobtime) * bob_offset;
+	lastbobtime = pparams->time;
+
+	//Calculate the vertical bob
+	cycle = bobtime - (int)(bobtime / HL2_BOB_CYCLE_MAX) * HL2_BOB_CYCLE_MAX;
+	cycle /= HL2_BOB_CYCLE_MAX;
+
+	if (cycle < HL2_BOB_UP)
+	{
+		cycle = M_PI * cycle / HL2_BOB_UP;
+	}
+	else
+	{
+		cycle = M_PI + M_PI * (cycle - HL2_BOB_UP) / (1.0 - HL2_BOB_UP);
+	}
+
+	g_verticalBob = speed * 0.015f;
+	g_verticalBob = g_verticalBob * 0.3 + g_verticalBob * 0.7 * sin(cycle);
+
+	g_verticalBob = clamp(g_verticalBob, -15.0f, 4.0f);
+
+	//Calculate the lateral bob
+	cycle = bobtime - (int)(bobtime / HL2_BOB_CYCLE_MAX * 2) * HL2_BOB_CYCLE_MAX * 2;
+	cycle /= HL2_BOB_CYCLE_MAX * 2;
+
+	if (cycle < HL2_BOB_UP)
+	{
+		cycle = M_PI * cycle / HL2_BOB_UP;
+	}
+	else
+	{
+		cycle = M_PI + M_PI * (cycle - HL2_BOB_UP) / (1.0 - HL2_BOB_UP);
+	}
+
+	g_lateralBob = speed * 0.004f;
+	g_lateralBob = g_lateralBob * 0.3 + g_lateralBob * 0.7 * sin(cycle);
+
+	g_lateralBob = clamp(g_lateralBob, -7.0f, 4.0f);
+
+	//NOTENOTE: We don't use this return value in our case (need to restructure the calculation function setup!)
+	return 0.0f;
+}
+
+
 //==========================
 // V_CalcBob
 //
@@ -101,13 +177,19 @@ void V_Init(void)
 //==========================
 float V_CalcBob(struct ref_params_s* pparams)
 {
-	static double bobtime;
-	static float bob, lasttime;
-	float cycle;
-	Vector vel;
+	static	double	bobtime;
+	static float	bob;
+	float	cycle;
+	static float	lasttime;
+	Vector	vel;
 
-	if (pparams->onground == -1 || pparams->time == lasttime)
+
+	if (pparams->onground == -1 ||
+		pparams->time == lasttime)
+	{
+		// just use old value
 		return bob;
+	}
 
 	lasttime = pparams->time;
 
@@ -121,14 +203,19 @@ float V_CalcBob(struct ref_params_s* pparams)
 	}
 	else
 	{
-		cycle = M_PI + M_PI * (cycle - cl_bobup->value) / (1.0f - cl_bobup->value);
+		cycle = M_PI + M_PI * (cycle - cl_bobup->value) / (1.0 - cl_bobup->value);
 	}
 
-	vel = pparams->simvel;
-	bob = sqrt(vel.x * vel.x + vel.y * vel.y) * cl_bob->value;
-	bob = bob * 0.3f + bob * 0.7f * sin(cycle);
+	// bob is proportional to simulated velocity in the xy plane
+	// (don't count Z, or jumping messes it up)
+	VectorCopy(pparams->simvel, vel);
+	vel[2] = 0;
 
-	return bound(-7, bob, 4);
+	bob = sqrt(vel[0] * vel[0] + vel[1] * vel[1]) * cl_bob->value;
+	bob = bob * 0.3 + bob * 0.7 * sin(cycle);
+	bob = min(bob, 4);
+	bob = max(bob, -7);
+	return bob;
 }
 
 extern cvar_t* cl_forwardspeed;
@@ -892,16 +979,15 @@ void V_CalcFirstPersonRefdef(struct ref_params_s* pparams)
 
 	V_DriftPitch(pparams);
 
-	float bob = V_CalcBob(pparams);
+	float bob;
 
 	pparams->vieworg = pparams->simorg;
 	pparams->vieworg += pparams->viewheight;
-	pparams->vieworg.z += bob;
-
 	pparams->viewangles = pparams->cl_viewangles;
 
 	gEngfuncs.V_CalcShake();
 	gEngfuncs.V_ApplyShake(pparams->vieworg, pparams->viewangles, 1.0f);
+	bob = V_CalcBob(pparams);
 
 	V_CalcSendOrigin(pparams);
 
@@ -927,13 +1013,30 @@ void V_CalcFirstPersonRefdef(struct ref_params_s* pparams)
 	// Let the viewmodel shake at about 10% of the amplitude
 	gEngfuncs.V_ApplyShake(view->origin, view->angles, 0.9f);
 
-	view->origin += pparams->forward * bob * 0.4f;
-	view->origin.z += bob;
+	V_CalcNewBob(pparams);
 
-	view->angles[PITCH] -= bob * 0.3f;
-	view->angles[YAW] -= bob * 0.5f;
-	view->angles[ROLL] -= bob * 1.0f;
-	//view->origin.z -= 1;
+	// Apply bob, but scaled down to 40%
+	VectorMA(view->origin, g_verticalBob * 0.1f, pparams->forward, view->origin);
+
+	// Z bob a bit more
+	view->origin[2] += g_verticalBob * 0.1f;
+
+	// bob the angles
+	view->angles[ROLL] += g_verticalBob * 0.3f;
+	view->angles[PITCH] -= g_verticalBob * 0.8f;
+
+	view->angles[YAW] -= g_lateralBob * 0.5f;
+
+	VectorMA(view->origin, g_lateralBob * 0.8f, pparams->right, view->origin);
+
+	for (int i = 0; i < 2; i++)
+	{
+		pparams->viewangles[ROLL] += bob * 0.3;
+		pparams->viewangles[YAW] += bob * 0.2;
+	}
+
+	pparams->vieworg[ROLL] -= sqrt(bob * bob) * 2 * pparams->up[ROLL];
+	view->origin[ROLL] -= sqrt(bob * bob) * 2 * pparams->up[ROLL];
 
 	// fudge position around to keep amount of weapon visible
 	// roughly equal with different FOV

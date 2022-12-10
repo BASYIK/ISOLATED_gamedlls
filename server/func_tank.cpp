@@ -537,6 +537,7 @@ int CBaseTank :: IRelationship( CBaseEntity* pTarget )
 		case CLASS_ALIEN_MONSTER:
 		case CLASS_ALIEN_PREDATOR:
 		case CLASS_ALIEN_PREY:
+		case CLASS_TERROR:
 			return R_HT;
 		default:
 			return R_NO;

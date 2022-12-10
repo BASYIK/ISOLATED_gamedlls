@@ -731,6 +731,8 @@ void CBasePlayerItem::Kill( void )
 
 void CBasePlayerItem::Holster( void )
 { 
+	m_pPlayer->pev->maxspeed = gSkillData.plrPrimaryMaxSpeed;
+
 	m_pPlayer->pev->viewmodel = 0; 
 	m_pPlayer->pev->weaponmodel = 0;
 }
@@ -1029,12 +1031,7 @@ int CBasePlayerWeapon::SecondaryAmmoIndex( void )
 
 void CBasePlayerWeapon::Holster( void )
 {
-	if (m_fInIronsight)
-	{
-		m_fInIronsightUse = 0;
-		SecondaryAttack();
-	}
-
+	m_pPlayer->pev->maxspeed = gSkillData.plrPrimaryMaxSpeed;
 
 	m_fInReload = FALSE; // cancel any reload in progress.
 	m_pPlayer->pev->viewmodel = 0; 

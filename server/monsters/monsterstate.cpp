@@ -110,6 +110,14 @@ void CBaseMonster :: RunAI ( void )
 	// we throw them out cause we don't want them sitting around through the lifespan of a schedule
 	// that doesn't use them. 
 	m_afConditions &= ~( bits_COND_LIGHT_DAMAGE | bits_COND_HEAVY_DAMAGE );
+
+	// buz
+	if (m_MonsterState == MONSTERSTATE_COMBAT ||
+		m_MonsterState == MONSTERSTATE_ALERT ||
+		m_MonsterState == MONSTERSTATE_HUNT)
+	{
+		m_iUseAlertAnims = 1;
+	}
 }
 
 //=========================================================

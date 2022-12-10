@@ -384,7 +384,6 @@ public:
 	DECLARE_DATADESC();
 
 	// basyik
-	//int GetMode(void); // 0 means gun dont use mode
 	int m_fInIronsight; // don't save this
 	int m_fInIronsightUse;
 	void DefaultFire(CBasePlayer* m_pPlayer, int cShots, wepspread_t spread, float damage, int anim, char* sound, int RadOfBright);

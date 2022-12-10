@@ -489,6 +489,8 @@ void GL_BackendEndFrame( ref_viewpass_t *rvp, RefParams params )
 
 	DBG_DrawLightFrustum();		// 3D
 
+	R_DrawHeadShield();		// 3D
+
 	R_PushRefState();
 	RI->params = params;
 	RI->view.fov_x = rvp->fov_x;

@@ -68,7 +68,18 @@ typedef struct cvar_s	cvar_t;
 #define PITCH_CURVE_ZERO		10	// pitch less than this is clamped to zero
 #define PITCH_CURVE_LINEAR		45	// pitch greater than this is copied out
 					// spline in between
-									
+
+// headshield states
+#define SHIELD_ON		0
+#define SHIELD_OFF		1
+#define SHIELD_TURNING_ON	2
+#define SHIELD_TURNING_OFF	3
+
+// headshield anims
+#define SHIELDANIM_IDLE	0
+#define SHIELDANIM_DRAW	1
+#define SHIELDANIM_HOLSTER	2
+
 //
 //-----------------------------------------------------
 //
@@ -533,6 +544,11 @@ public:
 	Vector m_vecAngles;
 	int m_iKeyBits;
 	cvar_t* m_pZoomSpeed; // buz
+
+	cl_entity_t* m_pHeadShieldEnt;
+	int		m_iHeadShieldState;
+	float		m_flHeadShieldSwitchTime;
+
 	int m_iHideHUDDisplay;
 	int m_iFOV;
 	float	m_flFOV; // buz - that's my FOV!
@@ -612,6 +628,8 @@ public:
 	int  _cdecl MsgFunc_StudioDecal( const char *pszName, int iSize, void *pbuf );
 	int  _cdecl MsgFunc_SetupBones( const char *pszName, int iSize, void *pbuf );
 	int  _cdecl MsgFunc_PostFxSettings( const char *pszName, int iSize, void *pbuf );
+
+	int _cdecl MsgFunc_HeadShield(const char* pszName, int iSize, void* pbuf);
 
 	// Screen information
 	SCREENINFO m_scrinfo;

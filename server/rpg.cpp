@@ -21,6 +21,7 @@
 #include "nodes.h"
 #include "player.h"
 #include "gamerules.h"
+#include "paranoia_wpn.h" // Wargon
 
 enum rpg_e
 {
@@ -36,9 +37,9 @@ enum rpg_e
 	RPG_FIDGET_UL,	// unloaded fidget
 };
 
-class CRpg : public CBasePlayerWeapon
+class CRpg : public CBaseToggleWeapon
 {
-	DECLARE_CLASS( CRpg, CBasePlayerWeapon );
+	DECLARE_CLASS( CRpg, CBaseToggleWeapon);
 public:
 	void Spawn( void );
 	void Precache( void );
@@ -307,7 +308,7 @@ void CRpg::Spawn( void )
 	m_iId = WEAPON_RPG;
 
 	SET_MODEL(ENT(pev), "models/w_rpg.mdl");
-	m_fSpotActive = 1;
+	m_fSpotActive = 0;
 
 	if ( g_pGameRules->IsMultiplayer() )
 	{
@@ -345,8 +346,8 @@ int CRpg::GetItemInfo(ItemInfo *p)
 	p->pszAmmo2 = NULL;
 	p->iMaxAmmo2 = -1;
 	p->iMaxClip = RPG_MAX_CLIP;
-	p->iSlot = 3;
-	p->iPosition = 2;
+	p->iSlot = 4;
+	p->iPosition = 1;
 	p->iId = m_iId = WEAPON_RPG;
 	p->iFlags = 0;
 	p->iWeight = RPG_WEIGHT;
@@ -417,6 +418,13 @@ void CRpg::PrimaryAttack()
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
 		
+		// Wargon: ƒобавлено дл€ правильной работы прицела.
+		Vector vecAiming = m_pPlayer->GetAutoaimVector(AUTOAIM_5DEGREES);
+		float spread = ExpandSpread(m_pMySpread->sec_expand);
+		EqualizeSpread(&spread, m_pMySpread->sec_equalize);
+		Vector vecSpread = AdvanceSpread(m_pMySpread->sec_minspread, m_pMySpread->sec_addspread, spread);
+
+
 		CRpgRocket *pRocket = CRpgRocket::CreateRpgRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this );
 
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );// RpgRocket::Create stomps on globals, so remake.
@@ -428,7 +436,10 @@ void CRpg::PrimaryAttack()
 		EMIT_SOUND( m_pPlayer->edict(), CHAN_ITEM, "weapons/glauncher.wav", 0.7, ATTN_NORM );
 
 		m_iClip--; 
-	
+
+		// Wargon: ƒобавлено дл€ правильной работы прицела.
+		DefSecPunch();
+
 		m_flNextPrimaryAttack = gpGlobals->time + 1.5;
 		m_flTimeWeaponIdle = gpGlobals->time + 1.5;
 		m_pPlayer->pev->punchangle.x -= 5;
@@ -443,15 +454,15 @@ void CRpg::PrimaryAttack()
 
 void CRpg::SecondaryAttack()
 {
-	m_fSpotActive = ! m_fSpotActive;
+	//m_fSpotActive = ! m_fSpotActive;
 
-	if (!m_fSpotActive && m_pSpot)
-	{
-		m_pSpot->Killed( NULL, GIB_NORMAL );
-		m_pSpot = NULL;
-	}
+	//if (!m_fSpotActive && m_pSpot)
+	//{
+	//	m_pSpot->Killed( NULL, GIB_NORMAL );
+	//	m_pSpot = NULL;
+	//}
 
-	m_flNextSecondaryAttack = gpGlobals->time + 0.2;
+	//m_flNextSecondaryAttack = gpGlobals->time + 0.2;
 }
 
 void CRpg::Reload( void )

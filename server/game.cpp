@@ -582,6 +582,10 @@ cvar_t	sk_clone_health_heavy1 = { "sk_clone_health_heavy1","0" };
 cvar_t	sk_clone_health_heavy2 = { "sk_clone_health_heavy2","0" };
 cvar_t	sk_clone_health_heavy3 = { "sk_clone_health_heavy3","0" };
 
+cvar_t	sk_clone_health_mutant1 = { "sk_clone_health_mutant1","500" };
+cvar_t	sk_clone_health_mutant2 = { "sk_clone_health_mutant2","600" };
+cvar_t	sk_clone_health_mutant3 = { "sk_clone_health_mutant3","700" };
+
 // buz: damage punch settings
 cvar_t	bullet_punch_max = { "bullet_punch_max","20" };
 cvar_t	bullet_punch_divide = { "bullet_punch_divide","8" };
@@ -1182,6 +1186,10 @@ void GameDLLInit( void )
 	CVAR_REGISTER(&sk_clone_health_heavy1);
 	CVAR_REGISTER(&sk_clone_health_heavy2);
 	CVAR_REGISTER(&sk_clone_health_heavy3);
+
+	CVAR_REGISTER(&sk_clone_health_mutant1);
+	CVAR_REGISTER(&sk_clone_health_mutant2);
+	CVAR_REGISTER(&sk_clone_health_mutant3);
 
 	CVAR_REGISTER(&bullet_punch_max);
 	CVAR_REGISTER(&bullet_punch_divide);

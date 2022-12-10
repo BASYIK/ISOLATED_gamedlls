@@ -107,7 +107,9 @@ BEGIN_DATADESC( CBaseMonster )
 	DEFINE_KEYFIELD( m_iszTriggerTarget, FIELD_STRING, "TriggerTarget" ),
 	DEFINE_FIELD( m_HackedGunPos, FIELD_VECTOR ),
 	DEFINE_FIELD( m_scriptState, FIELD_INTEGER ),
-	DEFINE_FIELD( m_pCine, FIELD_CLASSPTR ),
+	DEFINE_FIELD( m_pCine, FIELD_CLASSPTR ), 
+	DEFINE_FIELD( m_iUseAlertAnims, FIELD_INTEGER), // buz	
+
 END_DATADESC()
 
 int CBaseMonster::Restore( CRestore &restore )
@@ -1055,6 +1057,7 @@ int CBaseMonster :: CheckEnemy ( CBaseEntity *pEnemy )
 
 	iUpdatedLKP = FALSE;
 	ClearConditions ( bits_COND_ENEMY_FACING_ME );
+	ClearConditions(bits_COND_CROUCH_NOT_SAFE); // buz
 	
 	if ( !FVisible( pEnemy ) )
 	{
@@ -1071,6 +1074,23 @@ int CBaseMonster :: CheckEnemy ( CBaseEntity *pEnemy )
 		return FALSE;
 	}
 
+
+	// buz: check, is it safe to hide just by crouching? (when monster needs to reload or hurt)
+	if (m_afCapability & bits_CAP_CROUCH_COVER)
+	{
+		CBaseMonster* pEnemyMonster = pEnemy->MyMonsterPointer();
+		if (pEnemyMonster)
+		{
+			TraceResult tr;
+			Vector vecEnemy = pEnemyMonster->GetGunPosition();
+			Vector vecMeCrouched = pev->origin + Vector(0, 0, 36);
+			UTIL_TraceLine(vecEnemy, vecMeCrouched, ignore_monsters, ignore_glass, ENT(pev)/*pentIgnore*/, &tr);
+			if (tr.flFraction == 1.0) // can be shot, not safe
+			{
+				SetConditions(bits_COND_CROUCH_NOT_SAFE);
+			}
+		}
+	}
 	Vector vecEnemyPos = pEnemy->GetAbsOrigin();
 	// distance to enemy's origin
 	flDistToEnemy = ( vecEnemyPos - GetAbsOrigin() ).Length();
@@ -3054,6 +3074,11 @@ void CBaseMonster :: KeyValue( KeyValueData *pkvd )
 	else if (FStrEq(pkvd->szKeyName, "m_iPlayerReact") ) //LRC
 	{
 		m_iPlayerReact = atoi( pkvd->szValue );
+		pkvd->fHandled = TRUE;
+	}
+	else if (FStrEq(pkvd->szKeyName, "m_iStartAlert")) //buz
+	{
+		m_iUseAlertAnims = atoi(pkvd->szValue);
 		pkvd->fHandled = TRUE;
 	}
 	else if (FStrEq(pkvd->szKeyName, "weapons") )

@@ -1768,6 +1768,10 @@ void CStudioModelRenderer :: StudioStaticLight( cl_entity_t *ent, mstudiolight_t
 		R_FindWorldLights( origin, mins, maxs, m_pModelInstance->lights, skipZCheck );
 		ClearBits( m_pModelInstance->info_flags, MF_POSITION_CHANGED );
 	}
+
+	// use inverted light vector for head shield (hack)
+	if (m_iDrawModelType == DRAWSTUDIO_HEADSHIELD)
+		light->normal = -light->normal;
 }
 
 /*
@@ -2575,6 +2579,12 @@ bool CStudioModelRenderer :: ComputeCustomFov( matrix4x4 &projMatrix, matrix4x4 
 	else if( m_pCvarViewmodelFov->value > 120 )
 		gEngfuncs.Cvar_SetValue( "cl_viewmodel_fov", 120 );
 
+	if (m_pCvarHeadShieldFov->value < 50)
+		gEngfuncs.Cvar_SetValue("cl_headshield_fov", 50);
+	else if (m_pCvarHeadShieldFov->value > 120)
+		gEngfuncs.Cvar_SetValue("cl_headshield_fov", 120);
+
+
 	// Find the offset our current FOV is from the default value
 	float flFOVOffset = 90.0f - (float)RI->view.fov_x;
 
@@ -2584,6 +2594,10 @@ bool CStudioModelRenderer :: ComputeCustomFov( matrix4x4 &projMatrix, matrix4x4 
 		// Adjust the viewmodel's FOV to move with any FOV offsets on the viewer's end
 		m_flViewmodelFov = flDesiredFOV = m_pCvarViewmodelFov->value - flFOVOffset;
 		break;
+	case DRAWSTUDIO_HEADSHIELD:
+		// Adjust the headshield's FOV to move with any FOV offsets on the viewer's end
+		flDesiredFOV = m_pCvarHeadShieldFov->value - flFOVOffset;
+		break;
 	default:	// failed case, unchanged
 		flDesiredFOV = RI->view.fov_x;
 		break;
@@ -2592,6 +2606,10 @@ bool CStudioModelRenderer :: ComputeCustomFov( matrix4x4 &projMatrix, matrix4x4 
 	// calc local FOV
 	float fov_x = flDesiredFOV;
 	float fov_y = V_CalcFov( fov_x, ScreenWidth, ScreenHeight );
+
+	// don't adjust FOV for viewmodel, faceprotect only
+	if (m_iDrawModelType == DRAWSTUDIO_HEADSHIELD && RENDER_GET_PARM(PARM_WIDESCREEN, 0))
+		V_AdjustFov(fov_x, fov_y, ScreenWidth, ScreenHeight, false);
 
 	if( fov_x != RI->view.fov_x )
 	{
@@ -2697,6 +2715,125 @@ void CStudioModelRenderer :: DrawViewModel( void )
 
 	m_iDrawModelType = DRAWSTUDIO_NORMAL;
 	GL_BindShader( NULL );
+}
+
+/*
+================
+HeadShieldThink
+
+process client-side animations
+================
+*/
+int CStudioModelRenderer::HeadShieldThink(void)
+{
+	switch (gHUD.m_iHeadShieldState)
+	{
+	case SHIELD_ON:
+		return 1;
+	case SHIELD_TURNING_ON:
+		if (tr.time > gHUD.m_flHeadShieldSwitchTime)
+		{
+			gHUD.m_iHeadShieldState = SHIELD_ON;
+			gHUD.m_pHeadShieldEnt->curstate.animtime = tr.time;
+			gHUD.m_pHeadShieldEnt->curstate.sequence = SHIELDANIM_IDLE;
+		}
+		return 1;
+	case SHIELD_TURNING_OFF:
+		if (tr.time > gHUD.m_flHeadShieldSwitchTime)
+		{
+			gHUD.m_iHeadShieldState = SHIELD_OFF;
+			return 0;
+		}
+		else
+		{
+			return 1;
+		}
+	case SHIELD_OFF:
+		return 0;
+	default:
+		ALERT(at_error, "HeadShield: invalid state %d\n", gHUD.m_iHeadShieldState);
+		return 0;
+	}
+}
+
+
+/*
+=================
+DrawHeadShield
+
+a some copy and paste
+from viewmodel code
+=================
+*/
+void CStudioModelRenderer::DrawHeadShield(void)
+{
+	// g-cont. head shield must thinking always
+	if (!HeadShieldThink()) return;
+
+	// ignore in thirdperson, camera view or some special passes
+	if (FBitSet(RI->params, RP_THIRDPERSON) || !UTIL_IsLocal(RI->view.entity))
+		return;
+
+	if (!RP_NORMALPASS()) return;
+
+	// load shield once only
+	if (!IEngineStudio.Mod_Extradata(gHUD.m_pHeadShieldEnt->model))
+		return;
+
+	RI->currententity = gHUD.m_pHeadShieldEnt;
+	RI->currentmodel = gHUD.m_pHeadShieldEnt->model;
+	if (!RI->currentmodel) return;
+
+	SET_CURRENT_ENTITY(RI->currententity);
+	RI->currententity->curstate.renderamt = R_ComputeFxBlend(RI->currententity);
+
+	// g-cont. current offset for headshield is match with original paranoia code
+	gHUD.m_pHeadShieldEnt->origin = gHUD.m_pHeadShieldEnt->curstate.origin = GetVieworg() + GetVForward() * gHUD.m_pHeadShieldEnt->curstate.fuser2 + GetVUp() * 1.8f;
+	gHUD.m_pHeadShieldEnt->angles = gHUD.m_pHeadShieldEnt->curstate.angles = RI->view.angles;
+
+	// rotate face to player
+	gHUD.m_pHeadShieldEnt->angles[PITCH] *= -1;
+	gHUD.m_pHeadShieldEnt->curstate.angles[PITCH] *= -1;
+
+	m_iDrawModelType = DRAWSTUDIO_HEADSHIELD;
+
+	// don't affect headshield by any dynamic lights!
+	ClearBits(RI->view.flags, RF_HASDYNLIGHTS);
+	RI->frame.solid_meshes.Purge();
+	RI->frame.trans_list.Purge();
+
+	// clearing depth buffer to draw headshield always on a top
+	// like nextView = 1 in original code
+	pglClear(GL_DEPTH_BUFFER_BIT);
+	pglDisable(GL_DEPTH_TEST);
+
+	matrix4x4 projMatrix, worldViewProjMatrix;
+
+	bool bCustom = ComputeCustomFov(projMatrix, worldViewProjMatrix);
+
+	// we can't draw head shield and viewmodel for once call
+	// because water blur separates them
+	AddStudioModelToDrawList(RI->currententity);
+
+	if (FBitSet(RI->params, RP_DEFERREDSCENE | RP_DEFERREDLIGHT))
+	{
+		RenderDeferredStudioList();
+	}
+	else
+	{
+		RenderSolidStudioList();
+		R_RenderTransList();
+	}
+
+	if (bCustom) RestoreNormalFov(projMatrix, worldViewProjMatrix);
+
+	m_iDrawModelType = DRAWSTUDIO_NORMAL;
+
+	pglEnable(GL_DEPTH_TEST);
+	SET_CURRENT_ENTITY(NULL);
+	RI->currententity = NULL;
+	RI->currentmodel = NULL;
+	GL_BindShader(NULL);
 }
 
 void CStudioModelRenderer :: DrawMeshFromBuffer( const vbomesh_t *mesh )

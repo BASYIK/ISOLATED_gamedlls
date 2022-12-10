@@ -9,6 +9,7 @@
 void CHud :: Init( void )
 {
 	InitHUDMessages();
+	static cl_entity_t	head_shield;
 
 	m_Ammo.Init();
 	m_Health.Init();
@@ -27,6 +28,8 @@ void CHud :: Init( void )
 	m_Menu.Init();
 	m_MOTD.Init();
 	m_pZoomSpeed = CVAR_REGISTER("cl_zoomspeed", "100", 0);
+	// pointer to headshield entity
+	m_pHeadShieldEnt = &head_shield;
 
 	MsgFunc_ResetHUD( 0, 0, NULL );
 }
@@ -68,6 +71,13 @@ int CHud :: GetSpriteIndex( const char *SpriteName )
 void CHud :: VidInit( void )
 {
 	int j;
+
+	memset(m_pHeadShieldEnt, 0, sizeof(cl_entity_t));
+	m_pHeadShieldEnt->modelhandle = INVALID_HANDLE;
+	m_pHeadShieldEnt->curstate.framerate = 1.0f;
+	m_iHeadShieldState = SHIELD_OFF;
+	m_flHeadShieldSwitchTime = 0.0f;
+
 	m_scrinfo.iSize = sizeof( m_scrinfo );
 	GetScreenInfo( &m_scrinfo );
 

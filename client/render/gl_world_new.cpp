@@ -2193,6 +2193,12 @@ void Mod_PrepareModelInstances( void )
 		e->hCachedMatrix = WORLD_MATRIX;
 	}
 
+	if (gHUD.m_pHeadShieldEnt != NULL)
+	{
+		gHUD.m_pHeadShieldEnt->modelhandle = INVALID_HANDLE;
+		gHUD.m_pHeadShieldEnt->curstate.movetype = MOVETYPE_WALK;
+	}
+
 	GET_VIEWMODEL()->modelhandle = INVALID_HANDLE;
 	memset( tr.draw_entities, 0, sizeof( tr.draw_entities ));
 }

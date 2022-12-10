@@ -46,6 +46,8 @@ DECLARE_HUDMESSAGE( CustomDecal );
 DECLARE_HUDMESSAGE( StudioDecal );
 DECLARE_HUDMESSAGE( SetupBones );
 DECLARE_HUDMESSAGE( PostFxSettings );
+DECLARE_HUDMESSAGE(HeadShield);
+
 
 int CHud :: InitHUDMessages( void )
 {
@@ -70,6 +72,7 @@ int CHud :: InitHUDMessages( void )
 	HOOK_MESSAGE( StudioDecal );
 	HOOK_MESSAGE( SetupBones );
 	HOOK_MESSAGE( PostFxSettings );
+	HOOK_MESSAGE(HeadShield);
 
 	m_iFOV = 0;
 	m_iHUDColor = 0x00FFA000; // 255,160,0
@@ -519,6 +522,52 @@ int CHud :: MsgFunc_MusicFade( const char *pszName, int iSize, void *pbuf )
 		MUSIC_FADE_VOLUME( (float)READ_SHORT() / 100.0f );
 
 	END_READ();
+
+	return 1;
+}
+
+
+int CHud::MsgFunc_HeadShield(const char* pszName, int iSize, void* pbuf)
+{
+	studiohdr_t* pStudioHeader;
+	mstudioseqdesc_t* pseq;
+
+	BEGIN_READ(pszName, pbuf, iSize);
+
+	gHUD.m_pHeadShieldEnt->model = IEngineStudio.Mod_ForName("models/v_headshield.mdl", true);
+
+	if (g_fRenderInitialized && RENDER_GET_PARM(PARM_WIDESCREEN, 0))
+		gHUD.m_pHeadShieldEnt->curstate.fuser2 = 5.0f; // offset
+	else gHUD.m_pHeadShieldEnt->curstate.fuser2 = 16.0f; // offset
+
+	// 0 is OFF; 1 is ON; 2 is fast switch to ON
+	switch (READ_BYTE())
+	{
+	case 0:
+		m_iHeadShieldState = SHIELD_TURNING_OFF;
+		m_pHeadShieldEnt->curstate.animtime = gEngfuncs.GetClientTime();
+		m_pHeadShieldEnt->curstate.sequence = SHIELDANIM_HOLSTER;
+
+		// get animation length in seconds
+		pStudioHeader = (studiohdr_t*)IEngineStudio.Mod_Extradata(gHUD.m_pHeadShieldEnt->model);
+		pseq = (mstudioseqdesc_t*)((byte*)pStudioHeader + pStudioHeader->seqindex) + SHIELDANIM_HOLSTER;
+		m_flHeadShieldSwitchTime = gEngfuncs.GetClientTime() + (pseq->numframes / pseq->fps);
+		break;
+	case 1:
+		m_iHeadShieldState = SHIELD_TURNING_ON;
+		m_pHeadShieldEnt->curstate.animtime = gEngfuncs.GetClientTime();
+		m_pHeadShieldEnt->curstate.sequence = SHIELDANIM_DRAW;
+
+		// get animation length in seconds
+		pStudioHeader = (studiohdr_t*)IEngineStudio.Mod_Extradata(gHUD.m_pHeadShieldEnt->model);
+		pseq = (mstudioseqdesc_t*)((byte*)pStudioHeader + pStudioHeader->seqindex) + SHIELDANIM_DRAW;
+		m_flHeadShieldSwitchTime = gEngfuncs.GetClientTime() + (pseq->numframes / pseq->fps);
+		break;
+	case 2:
+		m_iHeadShieldState = SHIELD_ON;
+		m_pHeadShieldEnt->curstate.animtime = gEngfuncs.GetClientTime();
+		m_pHeadShieldEnt->curstate.sequence = SHIELDANIM_IDLE;
+	}
 
 	return 1;
 }

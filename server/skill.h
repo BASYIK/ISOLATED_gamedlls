@@ -147,6 +147,13 @@ struct skilldata_t
 	float plrDmgRpk;
 	float plrDmgGroza;
 
+	float MilDmgKick;
+	float milHealth;
+	float alphaHealth;
+	float terrorHealth;
+	float cloneHealth;
+	float cloneHealthHeavy;
+	float cloneHealthMutant;
 	// zombie damage abjusters
 	float zomHead;
 	float zomChest;

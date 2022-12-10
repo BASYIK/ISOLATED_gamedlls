@@ -107,6 +107,10 @@ int CHud :: Redraw( float flTime, int intermission )
 	// Clock was reset, reset delta
 	if( m_flTimeDelta < 0 ) m_flTimeDelta = 0;
 
+
+	if (!IEngineStudio.IsHardware() && m_iHeadShieldState != 1)
+		DrawHudString(XRES(10), YRES(350), XRES(600), "Using Head Shield", 180, 180, 180);
+
 	m_iIntermission = intermission;
 
 	if( m_pCvarDraw->value )

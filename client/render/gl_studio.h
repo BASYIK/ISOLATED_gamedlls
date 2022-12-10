@@ -57,6 +57,7 @@ GNU General Public License for more details.
 #define DRAWSTUDIO_NORMAL	0	// as default
 #define DRAWSTUDIO_VIEWMODEL	1	// rendeging viewmodel
 #define DRAWSTUDIO_RUNEVENTS	2	// run events of studiomodel
+#define DRAWSTUDIO_HEADSHIELD	3	// headshield or gasmask
 
 #define LIGHTSTATIC_NONE	0
 #define LIGHTSTATIC_VERTEX	1
@@ -264,6 +265,8 @@ private:
 	void StudioDrawBones( void );
 
 	void StudioDrawAttachments( bool bCustomFov );
+
+	int HeadShieldThink(void);
 
 	void StudioDrawBodyPartsBBox();
 
@@ -542,6 +545,7 @@ private:
 	cvar_t			*m_pCvarDrawViewModel;
 	cvar_t			*m_pCvarHand;	// handness
 	cvar_t			*m_pCvarViewmodelFov;
+	cvar_t* m_pCvarHeadShieldFov;
 	cvar_t			*m_pCvarCompatible;
 	cvar_t			*m_pCvarLodScale;
 	cvar_t			*m_pCvarLodBias;
@@ -628,6 +632,9 @@ public:
 	// Draw view model (at end the frame)
 	void	DrawViewModel( void );
 
+	// draw head shield (after viewmodel)
+	void	DrawHeadShield(void);
+
 	void	RenderDeferredStudioList( void );
 
 	void	RenderSolidStudioList( void );
@@ -658,6 +665,7 @@ inline void R_DrawViewModel( void )
 	GL_DEBUG_SCOPE();
 	g_StudioRenderer.DrawViewModel(); 
 }
+inline void R_DrawHeadShield(void) { g_StudioRenderer.DrawHeadShield(); }
 inline void R_ProcessStudioData( model_t *mod, qboolean create, const byte *buffer )
 {
 	if( mod->type == mod_studio )
