@@ -29,6 +29,7 @@
 #include "animation.h"
 #include "weapons.h"
 #include "func_break.h"
+#include "material.h"
 
 extern DLL_GLOBAL Vector		g_vecAttackDir;
 extern DLL_GLOBAL int		g_iSkillLevel;
@@ -372,7 +373,8 @@ Activity CBaseMonster :: GetDeathActivity ( void )
 	switch ( m_LastHitGroup )
 	{
 		// try to pick a region-specific death.
-	case HITGROUP_HEAD:
+	case HITGROUP_HEAD:		
+		UTIL_EmitAmbientSound(ENT(0), vecSrc, "common/headshot.wav", 1, ATTN_NORM, 0, 100);
 		deathActivity = ACT_DIE_HEADSHOT;
 		break;
 

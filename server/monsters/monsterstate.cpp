@@ -80,16 +80,17 @@ void CBaseMonster :: RunAI ( void )
 		// things will happen before the player gets there!
 		// UPDATE: We now let COMBAT state monsters think and act fully outside of player PVS. This allows the player to leave 
 		// an area where monsters are fighting, and the fight will continue.
-		if ( !FNullEnt( FIND_CLIENT_IN_PVS( edict() ) ) || ( m_MonsterState == MONSTERSTATE_COMBAT ) )
-		{
-			Look( m_flDistLook );
-			Listen();// check for audible sounds. 
+//		if ( !FNullEnt( FIND_CLIENT_IN_PVS( edict() ) ) || ( m_MonsterState == MONSTERSTATE_COMBAT ) )
+//		{
+		Look(m_flDistLook);
+		Listen();// check for audible sounds. 
 
-			// now filter conditions.
-			ClearConditions( IgnoreConditions() );
+		// now filter conditions.
+		ClearConditions(IgnoreConditions());
 
-			GetEnemy();
-		}
+		GetEnemy();
+		//		} buz: monsters can act anytime - for rush scripts
+
 
 		// do these calculations if monster has an enemy.
 		if ( m_hEnemy != NULL )

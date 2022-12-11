@@ -142,6 +142,9 @@ public:
 	void	SetJumpHeight(int value);
 	void ViewPunch(float p, float y, float r); // ТИХО СПИЗДИЛ И УШЁЛ НАЗЫВАЕТСЯ НАШЁЛ
 
+	// buz: last monster, who consider this player his enemy (allies will attack him)
+	EHANDLE	m_hLastEnemy;
+
 	// buz
 	void	ToggleGasMask(void);
 	void	ToggleHeadShield(void);

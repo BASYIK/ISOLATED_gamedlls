@@ -978,6 +978,27 @@ Schedule_t	slTakeCoverFromEnemy[] =
 	},
 };
 
+// buz: rush schedule
+Task_t	tlRushTarget[] =
+{
+	{ TASK_MOVE_TO_TARGET_RANGE2,(float)0		},
+};
+
+Schedule_t	slRushTarget[] =
+{
+	{
+		tlRushTarget,
+		ARRAYSIZE(tlRushTarget),
+		bits_COND_NEW_ENEMY |
+		bits_COND_LIGHT_DAMAGE |
+		bits_COND_HEAVY_DAMAGE |
+		bits_COND_HEAR_SOUND |
+		bits_COND_PROVOKED,
+		bits_SOUND_DANGER,
+		"Rush Target"
+	},
+};
+
 Schedule_t *CBaseMonster::m_scheduleList[] = 
 {
 	slIdleStand,
@@ -1017,7 +1038,8 @@ Schedule_t *CBaseMonster::m_scheduleList[] =
 	slTakeCoverFromOrigin,
 	slTakeCoverFromBestSound,
 	slTakeCoverFromEnemy,
-	slFail
+	slFail,
+	slRushTarget // buz
 };
 
 Schedule_t *CBaseMonster::ScheduleFromName( const char *pName )
@@ -1219,6 +1241,10 @@ Schedule_t* CBaseMonster :: GetScheduleOfType ( int Type )
 		{
 			return slFail;
 		}
+	case SCHED_RUSH_TARGET: // buz
+	{
+		return slRushTarget;
+	}
 	default:
 		{
 			ALERT ( at_console, "GetScheduleOfType()\nNo CASE for Schedule Type %d!\n", Type );

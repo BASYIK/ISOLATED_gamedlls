@@ -485,3 +485,51 @@ class CItemHeadShield : public CItem
 };
 
 LINK_ENTITY_TO_CLASS(item_headshield, CItemHeadShield);
+
+
+
+// buz: big battery, 100%
+class CItemArmour : public CItem
+{
+	void Spawn(void)
+	{
+		Precache();
+		if (pev->model)
+			SET_MODEL(ENT(pev), STRING(pev->model)); //LRC
+		else
+			SET_MODEL(ENT(pev), "models/w_armour.mdl");
+		CItem::Spawn();
+	}
+	void Precache(void)
+	{
+		if (pev->model)
+			PRECACHE_MODEL((char*)STRING(pev->model)); //LRC
+		else
+			PRECACHE_MODEL("models/w_armour.mdl");
+
+		PRECACHE_SOUND("items/armour.wav");
+	}
+	BOOL MyTouch(CBasePlayer* pPlayer)
+	{
+		if (pPlayer->pev->deadflag != DEAD_NO)
+		{
+			return FALSE;
+		}
+
+		if (pPlayer->pev->armorvalue < MAX_NORMAL_BATTERY)
+		{
+			pPlayer->pev->armorvalue = MAX_NORMAL_BATTERY;
+			EMIT_SOUND(pPlayer->edict(), CHAN_ITEM, "items/armour.wav", 1, ATTN_NORM);
+
+			MESSAGE_BEGIN(MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev);
+			WRITE_STRING(STRING(pev->classname));
+			MESSAGE_END();
+
+			return TRUE;
+		}
+		return FALSE;
+	}
+};
+
+LINK_ENTITY_TO_CLASS(item_armour, CItemArmour);
+

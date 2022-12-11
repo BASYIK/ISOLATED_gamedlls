@@ -109,6 +109,9 @@ BEGIN_DATADESC( CBaseMonster )
 	DEFINE_FIELD( m_scriptState, FIELD_INTEGER ),
 	DEFINE_FIELD( m_pCine, FIELD_CLASSPTR ), 
 	DEFINE_FIELD( m_iUseAlertAnims, FIELD_INTEGER), // buz	
+	DEFINE_FIELD( m_hRushEntity, FIELD_STRING), // buz
+	DEFINE_FIELD( m_iRushMovetype, FIELD_INTEGER), // buz
+	DEFINE_FIELD( m_flRushDistance, FIELD_FLOAT), // buz
 
 END_DATADESC()
 
@@ -3516,6 +3519,13 @@ BOOL CBaseMonster :: GetEnemy ( void )
 
 	if ( m_hEnemy != NULL )
 	{
+		// buz: if enemy is player, store myself in his data, so player's allies will attack me
+		if (m_hEnemy->IsPlayer())
+		{
+			CBasePlayer* pplayer = (CBasePlayer*)((CBaseEntity*)m_hEnemy);
+			pplayer->m_hLastEnemy = this;
+		}
+
 		// monster has an enemy.
 		return TRUE;
 	}

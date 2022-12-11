@@ -19,6 +19,7 @@
 //
 // generic Monster
 //
+
 class CBaseMonster : public CBaseToggle
 {
 private:
@@ -350,6 +351,11 @@ public:
 	void StartPatrol( CBaseEntity *path );
 
 	CBaseEntity* DropItem ( char *pszItemName, const Vector &vecPos, const Vector &vecAng );// drop an item.
+	// buz: rush vars
+	string_t	m_hRushEntity;
+	int			m_iRushMovetype;
+	float		m_flRushDistance;
+	float		m_flRushNextTime;
 };
 
 

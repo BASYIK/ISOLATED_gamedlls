@@ -43,15 +43,18 @@ BEGIN_DATADESC( CTalkMonster )
 	DEFINE_FIELD( m_flStopTalkTime, FIELD_TIME ),
 	DEFINE_FIELD( m_hTalkTarget, FIELD_EHANDLE ),
 	DEFINE_FUNCTION( FollowerUse ),
+	DEFINE_FIELD( m_deathNoticed, FIELD_INTEGER), // buz
 END_DATADESC()
 
 // array of friend names
 char *CTalkMonster::m_szFriends[TLK_CFRIENDS] = 
 {
+	"monster_human_alpha", // buz
+	"monster_alpha_pistol", // buz
+	"monster_human_military", // buz
 	"monster_barney",
 	"monster_scientist",
 	"monster_sitting_scientist",
-	"monster_generic",
 };
 
 
@@ -67,7 +70,7 @@ Task_t	tlIdleResponse[] =
 	{ TASK_TLK_RESPOND,		(float)0		},// Wait and then say my response
 	{ TASK_TLK_IDEALYAW,	(float)0		},// look at who I'm talking to
 	{ TASK_FACE_IDEAL,		(float)0		}, 
-	{ TASK_SET_ACTIVITY,	(float)ACT_SIGNAL3	},
+//	{ TASK_SET_ACTIVITY,	(float)ACT_SIGNAL3	},
 	{ TASK_TLK_EYECONTACT,	(float)0		},// Wait until speaker is done
 };
 
@@ -90,7 +93,7 @@ Task_t	tlIdleSpeak[] =
 	{ TASK_TLK_SPEAK,		(float)0		},// question or remark
 	{ TASK_TLK_IDEALYAW,	(float)0		},// look at who I'm talking to
 	{ TASK_FACE_IDEAL,		(float)0		}, 
-	{ TASK_SET_ACTIVITY,	(float)ACT_SIGNAL3	},
+	{ TASK_SET_ACTIVITY,	(float)ACT_IDLE	},
 	{ TASK_TLK_EYECONTACT,	(float)0		},
 	{ TASK_WAIT_RANDOM,		(float)0.5		},
 };
@@ -111,7 +114,7 @@ Schedule_t	slIdleSpeak[] =
 
 Task_t	tlIdleSpeakWait[] =
 {
-	{ TASK_SET_ACTIVITY,	(float)ACT_SIGNAL3	},// Stop and talk
+	{ TASK_SET_ACTIVITY,	(float)ACT_IDLE	},// Stop and talk
 	{ TASK_TLK_SPEAK,		(float)0		},// question or remark
 	{ TASK_TLK_EYECONTACT,	(float)0		},// 
 	{ TASK_WAIT,			(float)2		},// wait - used when sci is in 'use' mode to keep head turned
@@ -133,7 +136,7 @@ Schedule_t	slIdleSpeakWait[] =
 
 Task_t	tlIdleHello[] =
 {
-	{ TASK_SET_ACTIVITY,	(float)ACT_SIGNAL3	},// Stop and talk
+	{ TASK_SET_ACTIVITY,	(float)ACT_IDLE	},// Stop and talk
 	{ TASK_TLK_HELLO,		(float)0		},// Try to say hello to player
 	{ TASK_TLK_EYECONTACT,	(float)0		},
 	{ TASK_WAIT,			(float)0.5		},// wait a bit
@@ -263,7 +266,6 @@ Task_t	tlTlkIdleWatchClientStare[] =
 	{ TASK_TLK_STARE,			(float)0		},
 	{ TASK_TLK_IDEALYAW,		(float)0		},// look at who I'm talking to
 	{ TASK_FACE_IDEAL,			(float)0		}, 
-	{ TASK_SET_ACTIVITY,		(float)ACT_SIGNAL3	},
 	{ TASK_TLK_EYECONTACT,		(float)0		},
 };
 
@@ -321,7 +323,7 @@ Task_t	tlTlkIdleEyecontact[] =
 {
 	{ TASK_TLK_IDEALYAW,	(float)0		},// look at who I'm talking to
 	{ TASK_FACE_IDEAL,		(float)0		}, 
-	{ TASK_SET_ACTIVITY,	(float)ACT_SIGNAL3	},
+	{ TASK_SET_ACTIVITY,	(float)ACT_IDLE	},
 	{ TASK_TLK_EYECONTACT,	(float)0		},// Wait until speaker is done
 };
 
@@ -360,12 +362,6 @@ IMPLEMENT_CUSTOM_SCHEDULES( CTalkMonster, CBaseMonster );
 
 void CTalkMonster :: SetActivity ( Activity newActivity )
 {
-	if (newActivity == ACT_IDLE && IsTalking() )
-		newActivity = ACT_SIGNAL3;
-	
-	if ( newActivity == ACT_SIGNAL3 && (LookupActivity ( ACT_SIGNAL3 ) == ACTIVITY_NOT_AVAILABLE))
-		newActivity = ACT_IDLE;
-
 	CBaseMonster::SetActivity( newActivity );
 }
 
@@ -626,11 +622,27 @@ void CTalkMonster :: RunTask( Task_t *pTask )
 
 void CTalkMonster :: Killed( entvars_t *pevAttacker, int iGib )
 {
+
+
 	// If a client killed me (unless I was already Barnacle'd), make everyone else mad/afraid of him
-	if ( (pevAttacker->flags & FL_CLIENT) && m_MonsterState != MONSTERSTATE_PRONE )
+	if (pevAttacker && m_MonsterState != MONSTERSTATE_PRONE)
 	{
-		AlertFriends();
-		LimitFollowers( CBaseEntity::Instance(pevAttacker), 0 );
+		if (pevAttacker->flags & FL_CLIENT)
+		{
+			AlertFriends();
+			LimitFollowers(CBaseEntity::Instance(pevAttacker), 0);
+		}
+		else if (!m_deathNoticed)
+		{
+			// buz: make nearest friend talk about my death
+			m_deathNoticed = 1;
+			CBaseEntity* pFriend = FindNearestFriend(FALSE);
+			if (pFriend && pFriend->IsAlive())
+			{
+				CTalkMonster* pTalkMonster = (CTalkMonster*)pFriend;
+				pTalkMonster->TalkAboutDeadFriend(this);
+			}
+		}
 	}
 
 	m_hTargetEnt = NULL;
@@ -845,6 +857,7 @@ void CTalkMonster :: TalkInit( void )
 		m_szGrp[TLK_MORTAL]  = STRING(ALLOC_STRING(szBuf));
 	}
 
+	m_deathNoticed = 0; // buz
 	m_voicePitch = 100;
 }	
 //=========================================================
@@ -1194,7 +1207,7 @@ void CTalkMonster::PlayScriptedSentence( const char *pszSentence, float duration
 	if ( !bConcurrent )
 		ShutUpFriends();
 
-	ClearConditions( bits_COND_CLIENT_PUSH );	// Forget about moving!  I've got something to say!
+//	ClearConditions( bits_COND_CLIENT_PUSH );	// Forget about moving!  I've got something to say!
 	m_useTime = gpGlobals->time + duration;
 	PlaySentence( pszSentence, duration, volume, attenuation );
 
@@ -1414,28 +1427,31 @@ int CTalkMonster::IRelationship( CBaseEntity *pTarget )
 }
 
 
-void CTalkMonster::StopFollowing( BOOL clearSchedule )
+void CTalkMonster::StopFollowing(BOOL clearSchedule, int speakSentence)
 {
-	if ( IsFollowing() )
+	if (IsFollowing())
 	{
-		if ( !(m_afMemory & bits_MEMORY_PROVOKED) )
+		if (!(m_afMemory & bits_MEMORY_PROVOKED))
 		{
-			PlaySentence( m_szGrp[TLK_UNUSE], RANDOM_FLOAT(2.8, 3.2), VOL_NORM, ATTN_IDLE );
-			m_hTalkTarget = m_hTargetEnt;
+			if (speakSentence)
+			{
+				PlaySentence(m_szGrp[TLK_UNUSE], RANDOM_FLOAT(2.8, 3.2), VOL_NORM, ATTN_IDLE);
+				m_hTalkTarget = m_hTargetEnt;
+			}
 		}
 
-		if ( m_movementGoal == MOVEGOAL_TARGETENT )
+		if (m_movementGoal == MOVEGOAL_TARGETENT)
 			RouteClear(); // Stop him from walking toward the player
 		m_hTargetEnt = NULL;
-		if ( clearSchedule )
+		if (clearSchedule)
 			ClearSchedule();
-		if ( m_hEnemy != NULL )
+		if (m_hEnemy != NULL)
 			m_IdealMonsterState = MONSTERSTATE_COMBAT;
 	}
 }
 
 
-void CTalkMonster::StartFollowing( CBaseEntity *pLeader )
+void CTalkMonster::StartFollowing( CBaseEntity *pLeader, int speakSentence)
 {
 	if ( m_pCine )
 		m_pCine->CancelScript();
@@ -1444,8 +1460,11 @@ void CTalkMonster::StartFollowing( CBaseEntity *pLeader )
 		m_IdealMonsterState = MONSTERSTATE_ALERT;
 
 	m_hTargetEnt = pLeader;
-	PlaySentence( m_szGrp[TLK_USE], RANDOM_FLOAT(2.8, 3.2), VOL_NORM, ATTN_IDLE );
-	m_hTalkTarget = m_hTargetEnt;
+	if (speakSentence) // buz
+	{
+		PlaySentence(m_szGrp[TLK_USE], RANDOM_FLOAT(2.8, 3.2), VOL_NORM, ATTN_IDLE);
+		m_hTalkTarget = m_hTargetEnt;
+	}
 	ClearConditions( bits_COND_CLIENT_PUSH );
 	ClearSchedule();
 }
@@ -1469,31 +1488,50 @@ BOOL CTalkMonster::CanFollow( void )
 void CTalkMonster :: FollowerUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
 	// Don't allow use during a scripted_sentence
-	if ( m_useTime > gpGlobals->time )
+	if ((m_useTime > gpGlobals->time) && useType == USE_SET)
 		return;
 
-	if ( pCaller != NULL && pCaller->IsPlayer() )
+	if (pCaller != NULL && pCaller->IsPlayer() && CanFollow())
 	{
-		// Pre-disaster followers can't be used
-		if ( IsLockedByMaster( pActivator ) || pev->spawnflags & SF_MONSTER_PREDISASTER )
+		if (!IsFollowing())
 		{
-			DeclineFollowing();
-		}
-		else if ( CanFollow() )
-		{
-			LimitFollowers( pCaller , 1 );
-
-			if ( m_afMemory & bits_MEMORY_PROVOKED )
-				ALERT( at_console, "I'm not following you, you evil person!\n" );
-			else
+			// Pre-disaster followers can't be used unless they've got a master to override their behaviour...
+			if (useType == USE_SET && (IsLockedByMaster() || (pev->spawnflags & SF_MONSTER_PREDISASTER && !m_sMaster)))
 			{
-				StartFollowing( pCaller );
-				SetBits(m_bitsSaid, bit_saidHelloPlayer);	// Don't say hi after you've started following
+				//ALERT(at_console,"Decline\n");
+				DeclineFollowing();
+				m_useTime = gpGlobals->time + 3;// buz
+			}
+			else if (useType != USE_OFF)
+			{
+				LimitFollowers(pCaller, 1);
+				if (m_afMemory & bits_MEMORY_PROVOKED)
+				{
+					//ALERT(at_console,"Fail\n");
+					ALERT(at_aiconsole, "I'm not following you, you evil person!\n");
+				}
+				else
+				{
+					//ALERT(at_console,"Start\n");
+					StartFollowing(pCaller, useType == USE_SET); // buz: say sentence only if directly used by player
+					SetBits(m_bitsSaid, bit_saidHelloPlayer);	// Don't say hi after you've started following
+				}
 			}
 		}
 		else
 		{
-			StopFollowing( TRUE );
+			// buz: speak also decline sentence if player tries to stop blocked monster
+			//ALERT(at_console,"Stop\n");
+			if (useType == USE_SET && (IsLockedByMaster() || (pev->spawnflags & SF_MONSTER_PREDISASTER && !m_sMaster)))
+			{
+				//ALERT(at_console,"Decline\n");
+				DeclineFollowing();
+				m_useTime = gpGlobals->time + 3;// buz
+			}
+			else if (useType != USE_ON)
+			{
+				StopFollowing(TRUE, useType == USE_SET); // buz: say sentence only if directly used by player
+			}
 		}
 	}
 }

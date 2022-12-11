@@ -2734,6 +2734,7 @@ void CHGrunt::Killed(entvars_t* pevAttacker, int iGib)
 
 class CHGruntGlock : public CHGrunt
 {
+	DECLARE_CLASS(CHGruntGlock, CHGrunt)
 public:
 	void Spawn(void);
 	void Precache(void);
@@ -3070,6 +3071,7 @@ void CHGruntGlock::Killed(entvars_t* pevAttacker, int iGib)
 
 #define TERR_HEAD_GASMASK	3
 
+#define CLONM_GUN_GROUP					1
 
 class CTerror : public CHGrunt
 {
@@ -3761,9 +3763,9 @@ Schedule_t* CTerror::GetSchedule(void)
 				//!!!KELLY - this grunt was hit and is going to run to cover.
 				if (FOkToSpeak()) // && RANDOM_LONG(0,1))
 				{
-					//SENTENCEG_PlayRndSz( ENT(pev), "HG_COVER", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
-					m_iSentence = HGRUNT_SENT_COVER;
-					//JustSpoke();
+					SENTENCEG_PlayRndSz( ENT(pev), "TE_COVER", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
+					//m_iSentence = HGRUNT_SENT_COVER;
+					JustSpoke();
 				}
 				//					ALERT(at_console, "TERROR TAKES COVER\n");
 				return GetScheduleOfType(SCHED_TAKE_COVER_FROM_ENEMY);
@@ -3837,9 +3839,9 @@ Schedule_t* CTerror::GetSchedule(void)
 				// charge the enemy's position. 
 				if (FOkToSpeak())// && RANDOM_LONG(0,1))
 				{
-					//SENTENCEG_PlayRndSz( ENT(pev), "HG_CHARGE", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
-					m_iSentence = HGRUNT_SENT_CHARGE;
-					//JustSpoke();
+					SENTENCEG_PlayRndSz( ENT(pev), "TE_CHARGE", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
+					//m_iSentence = HGRUNT_SENT_CHARGE;
+					JustSpoke();
 				}
 
 				return GetScheduleOfType(SCHED_GRUNT_ESTABLISH_LINE_OF_FIRE);
@@ -4039,6 +4041,7 @@ void CTerror::Killed(entvars_t* pevAttacker, int iGib)
 
 class CClone : public CTerror
 {
+	DECLARE_CLASS(CClone, CTerror);
 public:
 	void Spawn(void);
 	void Precache(void);
@@ -4498,7 +4501,7 @@ Schedule_t* CClone::GetSchedule(void)
 				if (FOkToSpeak()) // && RANDOM_LONG(0,1))
 				{
 					//SENTENCEG_PlayRndSz( ENT(pev), "HG_COVER", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
-					m_iSentence = HGRUNT_SENT_COVER;
+					//m_iSentence = HGRUNT_SENT_COVER;
 					//JustSpoke();
 				}
 				//					ALERT(at_console, "TERROR TAKES COVER\n");
@@ -4574,7 +4577,7 @@ Schedule_t* CClone::GetSchedule(void)
 				if (FOkToSpeak())// && RANDOM_LONG(0,1))
 				{
 					//SENTENCEG_PlayRndSz( ENT(pev), "HG_CHARGE", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
-					m_iSentence = HGRUNT_SENT_CHARGE;
+					//m_iSentence = HGRUNT_SENT_CHARGE;
 					//JustSpoke();
 				}
 
@@ -4770,14 +4773,44 @@ void CCloneHeavy::Precache()
 }
 
 
-class CCloneMutant : public CClone
+class CCloneMutant : public CTerror
 {
+	DECLARE_CLASS(CCloneMutant, CTerror);
 public:
+
 	void Spawn(void);
 	void Precache(void);
+
+	int  Classify(void) { return m_iClass ? m_iClass : CLASS_ALIEN_MONSTER; }
+
+	void HandleAnimEvent(MonsterEvent_t* pEvent);
+
+	void DeathSound(void);
+	void PainSound(void);
+	void IdleSound(void);
+
+	void SpeakSentence(void);
+
+	Schedule_t* GetSchedule(void);
+	Schedule_t* GetScheduleOfType(int Type);
+
+
+	static const char* pCloneMutantSentences[];
 };
 
-LINK_ENTITY_TO_CLASS(monster_zombie_clone, CCloneMutant);
+LINK_ENTITY_TO_CLASS(monster_soldier_clone_mutant, CCloneMutant);
+
+const char* CCloneMutant::pCloneMutantSentences[] =
+{
+	"CLM_GREN", // grenade scared grunt
+	"CLM_ALERT", // sees player
+	"CLM_MONSTER", // sees monster
+	"CLM_COVER", // running to cover
+	"CLM_THROW", // about to throw grenade
+	"CLM_CHARGE",  // running out to get the enemy
+	"CLM_TAUNT", // say rude things
+};
+
 
 //=========================================================
 // Spawn
@@ -4797,7 +4830,7 @@ void CCloneMutant::Spawn()
 	m_bloodColor = BLOOD_COLOR_RED;
 	pev->effects = 0;
 	if (pev->health == 0)
-		pev->health = gSkillData.cloneHealthHeavy;
+		pev->health = gSkillData.cloneHealthMutant;
 	m_flFieldOfView = 0.2;// indicates the width of this monster's forward view cone ( as a dotproduct result )
 	m_MonsterState = MONSTERSTATE_NONE;
 	m_flNextGrenadeCheck = gpGlobals->time + 1;
@@ -4817,14 +4850,13 @@ void CCloneMutant::Spawn()
 
 	if (!m_bHaveWeapons)
 	{
-		//pev->weapons = HGRUNT_9MMAR | HGRUNT_HANDGRENADE; // ak + grens
 		AddWeapon(HGRUNT_9MMAR);
 		AddWeapon(HGRUNT_HANDGRENADE);
 	}
 
 	if (HasWeapon(HGRUNT_SHOTGUN)) // rpk
 	{
-		SetBodygroup(TERR_GUN_GROUP, TERR_GUN_RPK);
+		SetBodygroup(CLONM_GUN_GROUP, TERR_GUN_RPK);
 		m_cClipSize = 100; // hehe
 	}
 	else
@@ -4874,6 +4906,12 @@ void CCloneMutant::Precache()
 	PRECACHE_SOUND("clone_mutant/m_die2.wav");
 	PRECACHE_SOUND("clone_mutant/m_die3.wav");
 
+	PRECACHE_SOUND("clone_mutant/m_pain1.wav");
+	PRECACHE_SOUND("clone_mutant/m_pain2.wav");
+	PRECACHE_SOUND("clone_mutant/m_pain3.wav");
+	PRECACHE_SOUND("clone_mutant/m_pain4.wav");
+	PRECACHE_SOUND("clone_mutant/m_pain5.wav");
+
 	PRECACHE_SOUND("weapons/glauncher.wav");
 
 	PRECACHE_SOUND("zombie/claw_miss2.wav");// because we use the basemonster SWIPE animation event
@@ -4883,4 +4921,436 @@ void CCloneMutant::Precache()
 		m_voicePitch = 109 + RANDOM_LONG(0, 7);
 	else
 		m_voicePitch = 100;
+}
+
+
+//=========================================================
+// HandleAnimEvent - catches the monster-specific messages
+// that occur when tagged animation frames are played.
+//=========================================================
+void CCloneMutant::HandleAnimEvent(MonsterEvent_t* pEvent)
+{
+	Vector	vecShootDir;
+	Vector	vecShootOrigin;
+
+	switch (pEvent->event)
+	{
+	case HGRUNT_AE_DROP_GUN:
+	{
+		if (pev->spawnflags & SF_MONSTER_NO_WPN_DROP) break; //LRC
+
+		Vector	vecGunPos;
+		Vector	vecGunAngles;
+
+		GetAttachment(0, vecGunPos, vecGunAngles);
+
+		// switch to body group with no gun.
+		SetBodygroup(CLONM_GUN_GROUP, TERR_GUN_NONE);
+
+		// now spawn a gun.
+		if (HasWeapon(HGRUNT_SHOTGUN))
+			DropItem("weapon_rpk", vecGunPos, vecGunAngles);
+		else
+			DropItem("weapon_ak74", vecGunPos, vecGunAngles);
+
+		if (HasWeapon(HGRUNT_GRENADELAUNCHER))
+			DropItem("ammo_ARgrenades", BodyTarget(pev->origin), vecGunAngles);
+
+	}
+	break;
+
+	case HGRUNT_AE_RELOAD:
+		if (HasWeapon(HGRUNT_SHOTGUN))
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "clone/cl_reload_rpk.wav", 1, ATTN_NORM);
+		else
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "clone/cl_reload_ak.wav", 1, ATTN_NORM);
+
+		m_cAmmoLoaded = m_cClipSize;
+		ClearConditions(bits_COND_NO_AMMO_LOADED);
+		break;
+
+	case HGRUNT_AE_BURST1:
+		// Shoot() will play sound		
+		CSoundEnt::InsertSound(bits_SOUND_COMBAT, pev->origin, 384, 0.3);
+
+	case HGRUNT_AE_BURST2:
+	case HGRUNT_AE_BURST3:
+		Shoot();
+		break;
+
+	case HGRUNT_AE_CAUGHT_ENEMY:
+		if (FOkToSpeak())
+		{
+			SENTENCEG_PlayRndSz(ENT(pev), "CLM_ALERT", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
+			JustSpoke();
+		}
+
+	default:
+		CTerror::HandleAnimEvent(pEvent);
+		break;
+	}
+}
+
+
+//=========================================================
+// PainSound
+//=========================================================
+void CCloneMutant::PainSound(void)
+{
+	if (gpGlobals->time > m_flNextPainTime)
+	{
+		switch (RANDOM_LONG(0, 6))
+		{
+		case 0:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "clone_mutant/m_pain3.wav", 1, ATTN_NORM);
+			break;
+		case 1:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "clone_mutant/m_pain4.wav", 1, ATTN_NORM);
+			break;
+		case 2:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "clone_mutant/m_pain5.wav", 1, ATTN_NORM);
+			break;
+		case 3:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "clone_mutant/m_pain1.wav", 1, ATTN_NORM);
+			break;
+		case 4:
+			EMIT_SOUND(ENT(pev), CHAN_VOICE, "clone_mutant/m_pain2.wav", 1, ATTN_NORM);
+			break;
+		}
+
+		m_flNextPainTime = gpGlobals->time + 1;
+	}
+}
+
+//=========================================================
+// DeathSound 
+//=========================================================
+void CCloneMutant::DeathSound(void)
+{
+	switch (RANDOM_LONG(0, 2))
+	{
+	case 0:
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "clone_mutant/m_die1.wav", 1, ATTN_IDLE);
+		break;
+	case 1:
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "clone_mutant/m_die2.wav", 1, ATTN_IDLE);
+		break;
+	case 2:
+		EMIT_SOUND(ENT(pev), CHAN_VOICE, "clone_mutant/m_die3.wav", 1, ATTN_IDLE);
+		break;
+	}
+}
+
+
+//=========================================================
+// IdleSound 
+//=========================================================
+void CCloneMutant::IdleSound(void)
+{
+	if (FOkToSpeak() && (g_fTerrorQuestion || RANDOM_LONG(0,1)))
+	{
+		if (!g_fTerrorQuestion)
+		{
+			// ask question or make statement
+			switch (RANDOM_LONG(0,2))
+			{
+			case 0: // check in
+				SENTENCEG_PlayRndSz(ENT(pev), "CLM_IDLE", HGRUNT_SENTENCE_VOLUME, ATTN_NORM, 0, m_voicePitch);
+				g_fTerrorQuestion = 1;
+				break;
+			case 1: // question
+				SENTENCEG_PlayRndSz(ENT(pev), "CLM_IDLE", HGRUNT_SENTENCE_VOLUME, ATTN_NORM, 0, m_voicePitch);
+				g_fTerrorQuestion = 2;
+				break;
+			case 2: // statement
+				SENTENCEG_PlayRndSz(ENT(pev), "CLM_IDLE", HGRUNT_SENTENCE_VOLUME, ATTN_NORM, 0, m_voicePitch);
+				break;
+			}
+		}
+		else
+		{
+			switch (g_fTerrorQuestion)
+			{
+			case 1: // check in
+				SENTENCEG_PlayRndSz(ENT(pev), "CLM_IDLE", HGRUNT_SENTENCE_VOLUME, ATTN_NORM, 0, m_voicePitch);
+				break;
+			case 2: // question
+				SENTENCEG_PlayRndSz(ENT(pev), "CLM_IDLE", HGRUNT_SENTENCE_VOLUME, ATTN_NORM, 0, m_voicePitch);
+				break;
+			}
+			g_fTerrorQuestion = 0;
+		}
+		JustSpoke();
+	}
+}
+
+void CCloneMutant::SpeakSentence(void)
+{
+	if (m_iSentence == HGRUNT_SENT_NONE)
+		return;
+
+	if (FOkToSpeak())
+	{
+		SENTENCEG_PlayRndSz(ENT(pev), pCloneMutantSentences[m_iSentence], HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
+		JustSpoke();
+	}
+}
+
+
+
+//=========================================================
+// Get Schedule!
+//=========================================================
+Schedule_t* CCloneMutant::GetSchedule(void)
+{
+	// clear old sentence
+	m_iSentence = HGRUNT_SENT_NONE;
+
+	// flying? If PRONE, barnacle has me. IF not, it's assumed I am rapelling. 
+	if (pev->movetype == MOVETYPE_FLY && m_MonsterState != MONSTERSTATE_PRONE)
+		return CTerror::GetSchedule();
+
+	// grunts place HIGH priority on running away from danger sounds.
+	if (HasConditions(bits_COND_HEAR_SOUND))
+	{
+		CSound* pSound;
+		pSound = PBestSound();
+
+		ASSERT(pSound != NULL);
+		if (pSound)
+		{
+			if (pSound->m_iType & bits_SOUND_DANGER)
+			{
+				// dangerous sound nearby!
+				if (FOkToSpeak())
+				{
+					SENTENCEG_PlayRndSz(ENT(pev), "CL_GREN", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
+					JustSpoke();
+				}
+				// ALERT(at_aiconsole, "COVER FROM SOUND\n");
+				return GetScheduleOfType(SCHED_TAKE_COVER_FROM_BEST_SOUND);
+			}
+			/*
+			if (!HasConditions( bits_COND_SEE_ENEMY ) && ( pSound->m_iType & (bits_SOUND_PLAYER | bits_SOUND_COMBAT) ))
+			{
+				MakeIdealYaw( pSound->m_vecOrigin );
+			}
+			*/
+		}
+	}
+	switch (m_MonsterState)
+	{
+	case MONSTERSTATE_IDLE: // buz: перезарядиться, если врага нет и магазин полупуст
+	case MONSTERSTATE_ALERT:
+
+		if (m_cAmmoLoaded < m_cClipSize / 2)
+		{
+			return GetScheduleOfType(SCHED_RELOAD);
+		}
+		break;
+
+	case MONSTERSTATE_COMBAT:
+	{
+		// dead enemy
+		if (HasConditions(bits_COND_ENEMY_DEAD))
+		{
+			// call base class, all code to handle dead enemies is centralized there.
+			return CBaseMonster::GetSchedule();
+		}
+
+		// new enemy
+		if (HasConditions(bits_COND_NEW_ENEMY))
+		{
+			if (InSquad())
+			{
+				MySquadLeader()->m_fEnemyEluded = FALSE;
+
+				if (!IsLeader())
+				{
+					// ALERT(at_aiconsole, "COVER FROM ENEMY (SQUAD)\n");
+					return GetScheduleOfType(SCHED_TAKE_COVER_FROM_ENEMY);
+				}
+				else
+				{
+					// ALERT(at_aiconsole,"leader spotted player!\n");
+
+					if (FOkToSpeak())// && RANDOM_LONG(0,1))
+					{
+						if (m_hEnemy != NULL)
+						{
+							//	if (m_hEnemy->IsPlayer())
+							SENTENCEG_PlayRndSz(ENT(pev), "CLM_ALERT", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
+						}
+
+						JustSpoke();
+					}
+
+					if (HasConditions(bits_COND_CAN_RANGE_ATTACK1))
+					{
+						return GetScheduleOfType(SCHED_GRUNT_SUPPRESS);
+					}
+					else
+					{
+						return GetScheduleOfType(SCHED_GRUNT_ESTABLISH_LINE_OF_FIRE);
+					}
+				}
+			}
+		}
+		// no ammo
+		else if (HasConditions(bits_COND_NO_AMMO_LOADED))
+		{
+			if ((m_afCapability & bits_CAP_CROUCH_COVER) && !HasConditions(bits_COND_CROUCH_NOT_SAFE)) // buz: reload here, if safe
+				return GetScheduleOfType(SCHED_RELOAD);
+			else
+				return GetScheduleOfType(SCHED_GRUNT_COVER_AND_RELOAD);
+		}
+
+		// damaged just a little
+		else if (HasConditions(bits_COND_LIGHT_DAMAGE))
+		{
+			int iPercent;
+
+			// buz: 90% to duck and cover, if can
+			if ((m_afCapability & bits_CAP_CROUCH_COVER) && !HasConditions(bits_COND_CROUCH_NOT_SAFE) && m_hEnemy != NULL)
+			{
+				//					ALERT(at_console, "TERROR HIDES\n");
+				iPercent = RANDOM_LONG(0, 99);
+				if (iPercent <= 90)
+					return GetScheduleOfType(SCHED_GRUNT_DUCK_COVER_WAIT); // wait some time in cover
+			}
+
+			// buz: now 50% to try normal way of taking cover
+			iPercent = RANDOM_LONG(0, 99);
+			if (iPercent <= 50 && m_hEnemy != NULL)
+			{
+				return GetScheduleOfType(SCHED_TAKE_COVER_FROM_ENEMY);
+			}
+			else
+			{
+				//					ALERT(at_console, "TERROR FLINCHES\n");
+				return GetScheduleOfType(SCHED_SMALL_FLINCH);
+			}
+		}
+		// can kick
+		else if (HasConditions(bits_COND_CAN_MELEE_ATTACK1))
+		{
+			return GetScheduleOfType(SCHED_MELEE_ATTACK1);
+		}
+		// can grenade launch
+
+		else if (HasWeapon(HGRUNT_GRENADELAUNCHER) && HasConditions(bits_COND_CAN_RANGE_ATTACK2) && OccupySlot(bits_SLOTS_HGRUNT_GRENADE))
+		{
+			// shoot a grenade if you can
+			return GetScheduleOfType(SCHED_RANGE_ATTACK2);
+		}
+		// can shoot
+		else if (HasConditions(bits_COND_CAN_RANGE_ATTACK1))
+		{
+			if (InSquad())
+			{
+				// if the enemy has eluded the squad and a squad member has just located the enemy
+				// and the enemy does not see the squad member, issue a call to the squad to waste a 
+				// little time and give the player a chance to turn.
+				if (MySquadLeader()->m_fEnemyEluded && !HasConditions(bits_COND_ENEMY_FACING_ME))
+				{
+					MySquadLeader()->m_fEnemyEluded = FALSE;
+					return GetScheduleOfType(SCHED_GRUNT_FOUND_ENEMY);
+				}
+			}
+
+			if (OccupySlot(bits_SLOTS_HGRUNT_ENGAGE))
+			{
+				// try to take an available ENGAGE slot
+				return GetScheduleOfType(SCHED_RANGE_ATTACK1);
+			}
+			else if (HasConditions(bits_COND_CAN_RANGE_ATTACK2) && OccupySlot(bits_SLOTS_HGRUNT_GRENADE))
+			{
+				// throw a grenade if can and no engage slots are available
+				return GetScheduleOfType(SCHED_RANGE_ATTACK2);
+			}
+			else
+			{
+				// hide!
+				// ALERT(at_aiconsole, "COVER FROM ENEMY (HIDE)\n");
+				return GetScheduleOfType(SCHED_TAKE_COVER_FROM_ENEMY);
+			}
+		}
+		// can't see enemy
+		else if (HasConditions(bits_COND_ENEMY_OCCLUDED))
+		{
+			if (HasConditions(bits_COND_CAN_RANGE_ATTACK2) && OccupySlot(bits_SLOTS_HGRUNT_GRENADE))
+			{
+				//!!!KELLY - this grunt is about to throw or fire a grenade at the player. Great place for "fire in the hole"  "frag out" etc
+				if (FOkToSpeak())
+				{
+					SENTENCEG_PlayRndSz(ENT(pev), "CLM_THROW", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
+					JustSpoke();
+				}
+				return GetScheduleOfType(SCHED_RANGE_ATTACK2);
+			}
+			else if (OccupySlot(bits_SLOTS_HGRUNT_ENGAGE))
+			{
+				return GetScheduleOfType(SCHED_GRUNT_ESTABLISH_LINE_OF_FIRE);
+			}
+			else
+			{
+				//!!!KELLY - grunt is going to stay put for a couple seconds to see if
+				// the enemy wanders back out into the open, or approaches the
+				// grunt's covered position. Good place for a taunt, I guess?
+				if (FOkToSpeak() && RANDOM_LONG(0, 1))
+				{
+					SENTENCEG_PlayRndSz(ENT(pev), "CLM_TAUNT", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
+					JustSpoke();
+				}
+				return GetScheduleOfType(SCHED_STANDOFF);
+			}
+		}
+
+		if (HasConditions(bits_COND_SEE_ENEMY) && !HasConditions(bits_COND_CAN_RANGE_ATTACK1))
+		{
+			return GetScheduleOfType(SCHED_GRUNT_ESTABLISH_LINE_OF_FIRE);
+		}
+	}
+	}
+
+	// no special cases here, call the base class
+	return CSquadMonster::GetSchedule();
+}
+
+//=========================================================
+//=========================================================
+Schedule_t* CCloneMutant::GetScheduleOfType(int Type)
+{
+	if (Type == SCHED_TAKE_COVER_FROM_ENEMY)
+	{
+		if (InSquad())
+		{
+			if (g_iSkillLevel == SKILL_HARD && HasConditions(bits_COND_CAN_RANGE_ATTACK2) && OccupySlot(bits_SLOTS_HGRUNT_GRENADE))
+			{
+				if (FOkToSpeak())
+				{
+					SENTENCEG_PlayRndSz(ENT(pev), "CL_THROW", HGRUNT_SENTENCE_VOLUME, GRUNT_ATTN, 0, m_voicePitch);
+					JustSpoke();
+				}
+				return slGruntTossGrenadeCover;
+			}
+			else
+			{
+				return &slGruntTakeCover[0];
+			}
+		}
+		else
+		{
+			if (OccupySlot(bits_SLOTS_HGRUNT_GRENADE) && RANDOM_LONG(0, 1))
+			{
+				return &slGruntGrenadeCover[0];
+			}
+			else
+			{
+				return &slGruntTakeCover[0];
+			}
+		}
+	}
+	else
+		return CHGrunt::GetScheduleOfType(Type);
 }

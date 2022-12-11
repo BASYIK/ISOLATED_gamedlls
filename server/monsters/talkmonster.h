@@ -37,7 +37,7 @@
 #define bit_saidHeard		(1<<6)
 #define bit_saidSmelled		(1<<7)
 
-#define TLK_CFRIENDS		4
+#define TLK_CFRIENDS		6
 
 typedef enum
 {
@@ -143,8 +143,8 @@ public:
 	// For following
 	BOOL			CanFollow( void );
 	BOOL			IsFollowing( void ) { return m_hTargetEnt != NULL && m_hTargetEnt->IsPlayer(); }
-	void			StopFollowing( BOOL clearSchedule );
-	void			StartFollowing( CBaseEntity *pLeader );
+	void			StopFollowing( BOOL clearSchedule, int speakSentence = TRUE);
+	void			StartFollowing( CBaseEntity *pLeader, int speakSentence);
 	virtual void		DeclineFollowing( void ) {}
 	void			LimitFollowers( CBaseEntity *pPlayer, int maxFollowers );
 
@@ -152,7 +152,9 @@ public:
 	
 	virtual void		SetAnswerQuestion( CTalkMonster *pSpeaker );
 	virtual int		FriendNumber( int arrayNumber )	{ return arrayNumber; }
-	
+
+	virtual void TalkAboutDeadFriend(CTalkMonster* pfriend) {}; // buz
+
 	static char	*m_szFriends[TLK_CFRIENDS];	// array of friend names
 	static float	g_talkWaitTime;
 	
@@ -165,6 +167,8 @@ public:
 	int		m_iszUnUse;		// Custom +USE sentence group (stop following)
 	int		m_iszDecline;		// Custom +USE sentence group (refuse to follow) LRC
 	int		m_iszSpeakAs;		// Change the prefix for all this monster's speeches LRC
+
+	int		m_deathNoticed; // buz: friends are noticed about my death
 
 	float		m_flLastSaidSmelled;	// last time we talked about something that stinks
 	float		m_flStopTalkTime;		// when in the future that I'll be done saying this sentence.

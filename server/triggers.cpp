@@ -28,6 +28,7 @@
 #include "trains.h"			// trigger_camera has train functionality
 #include "gamerules.h"
 #include "talkmonster.h"
+#include "rushscript.h" // buz
 
 // triggers
 #define SF_TRIGGER_ALLOWMONSTERS	1	// monsters allowed to fire this trigger
@@ -4888,3 +4889,72 @@ void CTriggerImpulse::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TY
 		UTIL_FireTargets( STRING(pev->target ), pActivator, this, USE_TOGGLE, value );
 	}
 }
+
+//======== buz: buz: rush script ======================
+
+
+void CStartRush::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
+{
+	CBaseEntity* pTarget = NULL;
+	pTarget = UTIL_FindEntityByTargetname(pTarget, STRING(pev->target), pActivator);
+	if (!pTarget)
+	{
+		ALERT(at_console, "scripted_startrush cant find monster %s\n", STRING(pev->target));
+		return;
+	}
+
+	CBaseMonster* pMonster = pTarget->MyMonsterPointer();
+	if (!pMonster)
+	{
+		ALERT(at_console, "%s is not a monster!\n", STRING(pev->target));
+		return;
+	}
+
+	pMonster->m_hRushEntity = pev->targetname;
+	pMonster->m_iRushMovetype = pev->weapons;
+	pMonster->m_flRushDistance = pev->frags;
+	pMonster->m_flRushNextTime = 0;
+
+	//	ALERT(at_console, "RUSH use org: %f, %f, %f\n", pev->origin.x, pev->origin.y, pev->origin.z);
+}
+
+CBaseEntity* CStartRush::GetDestinationEntity(void)
+{
+	if (!FStringNull(pev->message))
+	{
+		CBaseEntity* pTarget = NULL;
+		pTarget = UTIL_FindEntityByTargetname(pTarget, STRING(pev->message));
+		if (!pTarget)
+		{
+			ALERT(at_console, "scripted_startrush cant find entity %s\n", STRING(pev->message));
+			return this;
+		}
+		return pTarget;
+	}
+	//	ALERT(at_console, "RUSH: RETURNING org: %f, %f, %f\n", pev->origin.x, pev->origin.y, pev->origin.z);
+
+	return this;
+}
+
+void CStartRush::ReportSuccess(CBaseEntity* who)
+{
+	//	ALERT(at_console, " CStartRush got succes report\n");
+
+	if (!FStringNull(pev->netname))
+	{
+		UTIL_FireTargets(STRING(pev->netname), who, this, USE_TOGGLE, 0);
+		//	ALERT(at_console, " CStartRush firing: %s\n", STRING(pev->netname));
+	}
+}
+
+
+void CStartRush::Spawn(void)
+{
+	pev->solid = SOLID_NOT;
+	//	pev->effects = EF_NODRAW;
+}
+
+
+LINK_ENTITY_TO_CLASS(scripted_startrush, CStartRush);
+
+
