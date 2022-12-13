@@ -588,6 +588,9 @@ void ServerDeactivate( void )
 	g_GameStringPool.MakeEmptyString();
 }
 
+void CoopClearData(void);
+void CoopClearWeaponList(void);
+
 void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 {
 	int				i;
@@ -597,6 +600,7 @@ void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 
 	// Every call to ServerActivate should be matched by a call to ServerDeactivate
 	g_serveractive = 1;
+
 
 	LinkUserMessages ();
 
@@ -661,9 +665,21 @@ void PlayerPostThink( edict_t *pEntity )
 }
 
 
+void CoopClearData(void);
+void CoopClearWeaponList(void);
 
 void ParmsNewLevel( void )
 {
+	// retrieve the pointer to the save data
+	SAVERESTOREDATA* pSaveData = (SAVERESTOREDATA*)gpGlobals->pSaveData;
+
+	if (pSaveData)
+		pSaveData->connectionCount = BuildChangeList(pSaveData->levelList, MAX_LEVEL_CONNECTIONS);
+	else
+	{
+		CoopClearData();
+		CoopClearWeaponList();
+	}
 }
 
 
@@ -674,6 +690,11 @@ void ParmsChangeLevel( void )
 
 	if ( pSaveData )
 		pSaveData->connectionCount = BuildChangeList( pSaveData->levelList, MAX_LEVEL_CONNECTIONS );
+	else
+	{
+		CoopClearData();
+		CoopClearWeaponList();
+	}
 }
 
 
@@ -1755,7 +1776,6 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 
 		// buz: send gun mode for hud indication
 		cd->iuser4 = pl->m_pActiveItem->GetMode();
-
 	}
 	else
 	{

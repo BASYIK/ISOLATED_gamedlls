@@ -926,8 +926,8 @@ int CHudAmmo::Draw( float flTime )
 			(ScreenWidth - SPR_Width(m_pWeapon->hZoomedCrosshair, 0)) / 2,
 			(ScreenHeight - SPR_Height(m_pWeapon->hZoomedCrosshair, 0)) / 2,
 			&m_pWeapon->rcZoomedCrosshair);
-		//	SetCrosshair(m_pWeapon->hZoomedCrosshair, m_pWeapon->rcZoomedCrosshair, 255, 255, 255);
 	}
+
 	return 1;
 }
 

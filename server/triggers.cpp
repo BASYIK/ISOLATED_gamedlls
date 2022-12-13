@@ -29,6 +29,7 @@
 #include "gamerules.h"
 #include "talkmonster.h"
 #include "rushscript.h" // buz
+#include "game.h"
 
 // triggers
 #define SF_TRIGGER_ALLOWMONSTERS	1	// monsters allowed to fire this trigger
@@ -3157,6 +3158,10 @@ public:
 	char	m_szLandmarkName[cchMapNameMost];	// trigger_changelevel only:  landmark on next map
 	string_t	m_changeTarget;
 	float	m_changeTargetDelay;
+
+
+	unsigned int m_uTouchCount;
+	bool m_bUsed;
 };
 LINK_ENTITY_TO_CLASS( trigger_changelevel, CChangeLevel );
 
@@ -3212,6 +3217,9 @@ When the player touches this, he gets sent to the map listed in the "map" variab
 
 void CChangeLevel :: Spawn( void )
 {
+	m_uTouchCount = 0;
+	m_bUsed = false;
+
 	if ( FStrEq( m_szMapName, "" ) )
 		ALERT( at_console, "a trigger_changelevel doesn't have a map" );
 
@@ -3267,7 +3275,95 @@ edict_t *CChangeLevel :: FindLandmark( const char *pLandmarkName )
 //=========================================================
 void CChangeLevel :: UseChangeLevel ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
+	// if not activated by touch, do not count players
+	m_bUsed = true;
 	ChangeLevelNow( pActivator );
+}
+
+struct SavedCoords
+{
+	char ip[32][32];
+	Vector origin[32];
+	Vector angles[32];
+	char landmark[32];
+	Vector triggerorigin;
+	Vector triggerangles;
+	Vector offset;
+	int iCount;
+	bool valid;
+	bool validoffset;
+	bool validspawnpoint;
+} g_SavedCoords;
+void CoopClearData(void)
+{
+	// nullify
+	SavedCoords l_SavedCoords = {};
+	g_SavedCoords = l_SavedCoords;
+}
+
+static void validateoffset(void)
+{
+	if (!g_SavedCoords.validoffset)
+	{
+		edict_t* landmark = CChangeLevel::FindLandmark(g_SavedCoords.landmark);
+		if (landmark)
+			g_SavedCoords.offset = landmark->v.origin - g_SavedCoords.offset;
+		else
+			g_SavedCoords.offset = g_vecZero;
+		g_SavedCoords.validoffset = true;
+	}
+}
+
+bool CoopRestorePlayerCoords(CBaseEntity* player, Vector* origin, Vector* angles)
+{
+	if (!g_SavedCoords.valid)
+		return false;
+	validateoffset();
+	// compute player by IQ
+	char* ip = g_engfuncs.pfnInfoKeyValue(g_engfuncs.pfnGetInfoKeyBuffer(player->edict()), "ip");
+	for (int i = 0; i < g_SavedCoords.iCount; i++)
+	{
+		if (!strcmp(ip, g_SavedCoords.ip[i]))
+		{
+			TraceResult tr;
+			Vector point = g_SavedCoords.origin[i] + g_SavedCoords.offset;
+
+			UTIL_TraceHull(point, point, missile, human_hull, NULL, &tr);
+			g_SavedCoords.ip[i][0] = 0;
+
+			if (tr.fStartSolid)
+				return false;
+			*origin = point;
+			*angles = g_SavedCoords.angles[i];
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CoopGetSpawnPoint(Vector* point, Vector* angles)
+{
+	if (!g_SavedCoords.valid)
+		return false;
+	validateoffset();
+	*point = g_SavedCoords.triggerorigin + g_SavedCoords.offset;
+	*angles = g_SavedCoords.triggerangles;
+	if (!g_SavedCoords.validspawnpoint)
+	{
+		TraceResult tr;
+		Vector angle;
+		UTIL_MakeVectorsPrivate(*angles, (float*)&angle, NULL, NULL);
+		UTIL_TraceHull(*point, *point + angle * 100, missile, human_hull, NULL, &tr);
+		if (!tr.fStartSolid)
+		{
+			g_SavedCoords.triggerorigin = tr.vecEndPos;
+			g_SavedCoords.validspawnpoint = true;
+		}
+		else
+			g_SavedCoords.valid = false;
+	}
+
+	return true;
 }
 
 void CChangeLevel :: ChangeLevelNow( CBaseEntity *pActivator )
@@ -3277,9 +3373,73 @@ void CChangeLevel :: ChangeLevelNow( CBaseEntity *pActivator )
 
 	ASSERT(!FStrEq(m_szMapName, ""));
 
+	SavedCoords l_SavedCoords = {};
+
+	// if not activated by touch, do not count players
+	if (!m_bUsed)
+	{
+		m_uTouchCount |= ENTINDEX(pActivator->edict());
+		unsigned int count1 = m_uTouchCount;
+		unsigned int count2 = 0;
+		unsigned int i = 0;
+
+		// count set bits
+		count1 = count1 - ((count1 >> 1) & 0x55555555);
+		count1 = (count1 & 0x33333333) + ((count1 >> 2) & 0x33333333);
+		count1 = (((count1 + (count1 >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+
+		// loop through all clients, count number of players
+		for (i = 1; i <= gpGlobals->maxClients; i++)
+		{
+			CBaseEntity* plr = UTIL_PlayerByIndex(i);
+
+			if (plr)
+			{
+				count2++;
+				char* ip = g_engfuncs.pfnInfoKeyValue(g_engfuncs.pfnGetInfoKeyBuffer(plr->edict()), "ip");
+
+				// player touched trigger, save it's coordinates
+				if (m_uTouchCount & (i - 1))
+				{
+					strcpy(l_SavedCoords.ip[l_SavedCoords.iCount], ip);
+					l_SavedCoords.origin[l_SavedCoords.iCount] = plr->pev->origin;
+					l_SavedCoords.angles[l_SavedCoords.iCount] = plr->pev->angles;
+					l_SavedCoords.iCount++;
+				}
+			}
+		}
+
+		i = 0;
+
+		if (count1 > 1 && count1 < count2 / 3)
+			i = count1 - count1 < count2 / 3;
+		if (count1 > 1 && count1 < count2 / 3)
+			i = 1;
+
+		if (i)
+			UTIL_ClientPrintAll(HUD_PRINTNOTIFY, UTIL_VarArgs("%s touched end of map, next is %s %s, %d to go\n",
+				(pActivator->pev->netname && STRING(pActivator->pev->netname)[0] != 0) ? STRING(pActivator->pev->netname) : "unconnected",
+				st_szNextMap, st_szNextSpot, i));
+
+		if (count1 > 1 && count1 < count2 / 3)
+			return;
+
+		if (count1 == 1 && count2 == 2)
+			return;
+
+		g_SavedCoords.triggerangles = pActivator->pev->angles;
+		g_SavedCoords.triggerorigin = pActivator->pev->origin;
+		g_SavedCoords.valid = true;
+	}
+
+	g_SavedCoords = l_SavedCoords;
+
 	// Don't work in deathmatch
-	if ( g_pGameRules->IsDeathmatch() )
-		return;
+//	if ( g_pGameRules->IsDeathmatch() )
+//		return;
+
+	m_uTouchCount = 0;
+	m_bUsed = false;
 
 	// Some people are firing these multiple times in a frame, disable
 	if ( gpGlobals->time == pev->dmgtime )
@@ -3311,6 +3471,12 @@ void CChangeLevel :: ChangeLevelNow( CBaseEntity *pActivator )
 			DispatchSpawn( pFireAndDie->edict() );
 		}
 	}
+
+	// shedule remove first info_player_start
+	CBaseEntity* playerstart = UTIL_FindEntityByClassname(NULL, "info_player_start");
+	if (playerstart)
+		playerstart->pev->flags |= FL_KILLME;
+
 	// This object will get removed in the call to CHANGE_LEVEL, copy the params into "safe" memory
 	strcpy(st_szNextMap, m_szMapName);
 
@@ -3323,7 +3489,8 @@ void CChangeLevel :: ChangeLevelNow( CBaseEntity *pActivator )
 	if ( !FNullEnt( pentLandmark ) )
 	{
 		strcpy(st_szNextSpot, m_szLandmarkName);
-		gpGlobals->vecLandmarkOffset = VARS(pentLandmark)->origin;
+		strcpy(g_SavedCoords.landmark, m_szLandmarkName);
+		g_SavedCoords.offset = gpGlobals->vecLandmarkOffset = VARS(pentLandmark)->origin;
 	}
 //	ALERT( at_console, "Level touches %d levels\n", ChangeList( levels, 16 ) );
 	ALERT( at_console, "CHANGE LEVEL: %s %s\n", st_szNextMap, st_szNextSpot );
@@ -3979,6 +4146,7 @@ void CBaseTrigger :: TeleportTouch( CBaseEntity *pOther )
 
 	Vector tmp = pTarget->GetAbsOrigin();
 	Vector pAngles = pTarget->GetAbsAngles();
+	UTIL_CleanSpawnPoint(tmp, 150);
 
 	if( pOther->IsPlayer( ))
 		tmp.z -= pOther->pev->mins.z; // make origin adjustments in case the teleportee is a player. (origin in center, not at feet)
@@ -4024,6 +4192,7 @@ END_DATADESC()
 
 void CTriggerSave::Spawn( void )
 {
+
 	if ( g_pGameRules->IsDeathmatch() )
 	{
 		REMOVE_ENTITY( ENT(pev) );

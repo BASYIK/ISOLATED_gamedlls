@@ -281,6 +281,7 @@ typedef struct
 	int iId;
 } AmmoInfo;
 
+
 // Items that the player has in their inventory that they can use
 class CBasePlayerItem : public CBaseAnimating
 {
@@ -299,6 +300,7 @@ public:
 
 	// buz: get current weapon mode (for toggleable weapons)
 	virtual int GetMode(void) { return 0; }; // 0 means gun dont use mode
+
 	virtual int AddToPlayer( CBasePlayer *pPlayer );	// return TRUE if the item you want the item added to the player inventory
 	virtual int AddDuplicate( CBasePlayerItem *pItem ) { return FALSE; }	// return TRUE if you want your duplicate removed from world
 	void DestroyItem( void );

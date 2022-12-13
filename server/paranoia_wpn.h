@@ -115,7 +115,19 @@ public:
 	virtual void WeaponIdle( void );
 	virtual void Holster( int skiplocal );
 	virtual Vector GetSpreadVec( void );
-	virtual int GetMode( void );
+
+	virtual int GetMode(void)
+	{
+		switch (m_iWeaponMode)
+		{
+		default:
+		case MODE_A:
+			return 1;
+		case MODE_B:
+			return 2;
+		}
+		return 0;
+	}
 
 	int		m_iWeaponMode;
 

@@ -836,20 +836,12 @@ Vector CBaseToggleWeapon::GetSpreadVec2( void )
 	return vecSpread;
 }
 
-
+/*
 int CBaseToggleWeapon::GetMode( void )
 {
-	switch (m_iWeaponMode)
-	{
-	default:
-	case MODE_A:
-		return 1;
 
-	case MODE_B:
-		return 2;
-	}
 }
-
+*/
 
 void CBaseSpreadWeapon::DefPrimPunch()
 {

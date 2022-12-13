@@ -2952,16 +2952,24 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 		} while ( pSpot != pFirstSpot ); // loop if we're not back to the start
 
 		// we haven't found a place to spawn yet,  so kill any guy at the first spawn point and spawn there
-		if ( !FNullEnt( pSpot ) )
+				// we haven't found a place to spawn yet,  so kill any guy at the first spawn point and spawn there
+		if (!FNullEnt(pSpot))
 		{
-			CBaseEntity *ent = NULL;
-			while(( ent = UTIL_FindEntityInSphere( ent, pSpot->GetAbsOrigin(), 128 )) != NULL )
+			if (allowmonsters.value)
 			{
-				// if ent is a client, kill em (unless they are ourselves)
-				if ( ent->IsPlayer() && !(ent->edict() == player) )
-					ent->TakeDamage( VARS(INDEXENT(0)), VARS(INDEXENT(0)), 300, DMG_GENERIC );
+				UTIL_CleanSpawnPoint(pSpot->pev->origin, 128);
 			}
-			goto ReturnSpot;
+			else
+			{
+				CBaseEntity* ent = NULL;
+				while ((ent = UTIL_FindEntityInSphere(ent, pSpot->pev->origin, 128)) != NULL)
+				{
+					// if ent is a client, kill em (unless they are ourselves)
+					if (ent->IsPlayer() && !(ent->edict() == player))
+						ent->TakeDamage(VARS(INDEXENT(0)), VARS(INDEXENT(0)), 300, DMG_GENERIC);
+				}
+				goto ReturnSpot;
+			}
 		}
 	}
 
@@ -4541,12 +4549,12 @@ void CBasePlayer :: UpdateClientData( void )
 	}
 
 	// calculate and update rain fading
-	if( m_flRainEndFade > 0.0f )
+	if (m_flRainEndFade > 0.0f)
 	{
-		if( gpGlobals->time < m_flRainEndFade )
+		if (gpGlobals->time < m_flRainEndFade)
 		{
 			// we're in fading process
-			if( m_flRainNextFadeUpdate <= gpGlobals->time )
+			if (m_flRainNextFadeUpdate <= gpGlobals->time)
 			{
 				int secondsLeft = m_flRainEndFade - gpGlobals->time + 1;
 
@@ -4559,7 +4567,7 @@ void CBasePlayer :: UpdateClientData( void )
 				m_flRainNextFadeUpdate = gpGlobals->time + 1; // update once per second
 				m_bRainNeedsUpdate = true;
 
-				ALERT( at_aiconsole, "Rain fading: curdrips: %i, idealdrips %i\n", m_iRainDripsPerSecond, m_iRainIdealDripsPerSecond );
+				ALERT(at_aiconsole, "Rain fading: curdrips: %i, idealdrips %i\n", m_iRainDripsPerSecond, m_iRainIdealDripsPerSecond);
 			}
 		}
 		else
@@ -4573,27 +4581,43 @@ void CBasePlayer :: UpdateClientData( void )
 			m_flRainWindY = m_flRainIdealWindY;
 			m_flRainRandX = m_flRainIdealRandX;
 			m_flRainRandY = m_flRainIdealRandY;
+
 			m_bRainNeedsUpdate = true;
 
-			ALERT( at_aiconsole, "Rain fading finished at %i drips\n", m_iRainDripsPerSecond );
-		}		
+			ALERT(at_aiconsole, "Rain fading finished at %i drips\n", m_iRainDripsPerSecond);
+		}
 	}
 
 	// send rain message
-	if( m_bRainNeedsUpdate )
+	if (m_bRainNeedsUpdate)
 	{
 		// search for env_rain entity
-		CBaseEntity *pFind; 
-		pFind = UTIL_FindEntityByClassname( NULL, "env_rain" );
-		if( !FNullEnt( pFind ))
+		CBaseEntity* pFind;
+		pFind = UTIL_FindEntityByClassname(NULL, "env_rain");
+		if (!FNullEnt(pFind))
 		{
 			// rain allowed on this map
-			CBaseEntity *pEnt = CBaseEntity::Instance( pFind->edict() );
+			CBaseEntity* pEnt = CBaseEntity::Instance(pFind->edict());
 
 			float raindistance = pEnt->pev->frags;
 			float rainheight = pEnt->pev->origin[2];
 			int rainmode = pEnt->pev->impulse;
 
+			// diffusion - search for current active rain and get info from there
+			if (pEnt->pev->iuser1 > gpGlobals->time) // rain not yet faded
+			{
+				m_flRainEndFade = pEnt->pev->iuser1;
+				m_iRainIdealDripsPerSecond = pEnt->pev->iuser2;
+			}
+			else
+			{
+				m_iRainDripsPerSecond = pEnt->pev->iuser2;
+				m_iRainIdealDripsPerSecond = pEnt->pev->iuser2;
+			}
+
+			m_flRainNextFadeUpdate = gpGlobals->time + 1; // update once per second
+
+			/*
 			// search for constant rain_modifies
 			pFind = UTIL_FindEntityByClassname( NULL, "env_rainmodify" );
 			while( !FNullEnt( pFind ))
@@ -4611,23 +4635,23 @@ void CBasePlayer :: UpdateClientData( void )
 					break;
 				}
 				pFind = UTIL_FindEntityByClassname( pFind, "env_rainmodify" );
-			}
+			}*/
 
-			MESSAGE_BEGIN( MSG_ONE, gmsgRainData, NULL, pev );
-				WRITE_SHORT( m_iRainDripsPerSecond );
-				WRITE_COORD( raindistance );
-				WRITE_COORD( m_flRainWindX );
-				WRITE_COORD( m_flRainWindY );
-				WRITE_COORD( m_flRainRandX );
-				WRITE_COORD( m_flRainRandY );
-				WRITE_SHORT( rainmode );
-				WRITE_COORD( rainheight );
+			MESSAGE_BEGIN(MSG_ONE, gmsgRainData, NULL, pev);
+			WRITE_SHORT(m_iRainDripsPerSecond);
+			WRITE_COORD(raindistance);
+			WRITE_COORD(m_flRainWindX);
+			WRITE_COORD(m_flRainWindY);
+			WRITE_COORD(m_flRainRandX);
+			WRITE_COORD(m_flRainRandY);
+			WRITE_SHORT(rainmode);
+			WRITE_COORD(rainheight);
 			MESSAGE_END();
 
-			if( m_iRainDripsPerSecond )
-				ALERT( at_aiconsole, "Sending enabling rain message\n" );
+			if (m_iRainDripsPerSecond)
+				ALERT(at_aiconsole, "Sending enabling rain message\n");
 			else
-				ALERT( at_aiconsole, "Sending disabling rain message\n" );
+				ALERT(at_aiconsole, "Sending disabling rain message\n");
 		}
 		else
 		{
@@ -4645,9 +4669,10 @@ void CBasePlayer :: UpdateClientData( void )
 			m_flRainEndFade = 0;
 			m_flRainNextFadeUpdate = 0;
 
-			ALERT( at_aiconsole, "Clearing rain data\n" );
+			ALERT(at_aiconsole, "Clearing rain data\n");
 		}
-		m_bRainNeedsUpdate = 0;
+
+		m_bRainNeedsUpdate = false;
 	}
 
 	if (m_iTrain & TRAIN_NEW)

@@ -669,6 +669,7 @@ extern void UTIL_GetModelBounds( int modelIndex, Vector &mins, Vector &maxs );
 extern void UTIL_SetSize( CBaseEntity *pEntity, const Vector &min, const Vector &max );
 
 float UTIL_SharedRandomFloat(unsigned int seed, float low, float high);
+void UTIL_CleanSpawnPoint(Vector origin, float radius);
 
 typedef void (CBaseEntity::*BASEPTR)(void);
 typedef void (CBaseEntity::*ENTITYFUNCPTR)(CBaseEntity *pOther );

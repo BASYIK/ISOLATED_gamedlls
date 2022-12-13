@@ -345,6 +345,12 @@ void V_CalcGunAngle(struct ref_params_s* pparams)
 
 	viewent->latched.prevangles = viewent->angles;
 	viewent->curstate.angles = viewent->angles;
+
+	// buz: add half of the punchangle to viewmodel
+	viewent->angles[0] -= pparams->punchangle[0] / 2;
+	viewent->angles[1] += pparams->punchangle[1] / 2;
+	viewent->angles[2] += pparams->punchangle[2] / 2;
+
 }
 
 //==========================
@@ -1009,6 +1015,7 @@ void V_CalcFirstPersonRefdef(struct ref_params_s* pparams)
 	view->origin = pparams->simorg;
 	view->origin += pparams->viewheight;
 	view->origin.z += waterOffset;
+	view->origin.z -= 1;
 
 	// Let the viewmodel shake at about 10% of the amplitude
 	gEngfuncs.V_ApplyShake(view->origin, view->angles, 0.9f);
@@ -1037,7 +1044,6 @@ void V_CalcFirstPersonRefdef(struct ref_params_s* pparams)
 
 	pparams->vieworg[ROLL] -= sqrt(bob * bob) * 2 * pparams->up[ROLL];
 	view->origin[ROLL] -= sqrt(bob * bob) * 2 * pparams->up[ROLL];
-
 	// fudge position around to keep amount of weapon visible
 	// roughly equal with different FOV
 	if (pparams->viewsize == 110)

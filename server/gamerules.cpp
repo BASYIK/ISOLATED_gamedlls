@@ -35,6 +35,11 @@ extern int gmsgMOTD;
 
 int g_teamplay = 0;
 
+bool CoopGetSpawnPoint(Vector* point, Vector* angles);
+
+bool CoopRestorePlayerCoords(CBaseEntity* player, Vector* origin, Vector* angles);
+
+
 //=========================================================
 //=========================================================
 BOOL CGameRules::CanHaveAmmo( CBasePlayer *pPlayer, const char *pszAmmoName, int iMaxCarry )
@@ -57,12 +62,12 @@ BOOL CGameRules::CanHaveAmmo( CBasePlayer *pPlayer, const char *pszAmmoName, int
 
 	return FALSE;
 }
-
 //=========================================================
 //=========================================================
 edict_t *CGameRules :: GetPlayerSpawnSpot( CBasePlayer *pPlayer )
 {
 	edict_t *pentSpawnSpot = EntSelectSpawnPoint( pPlayer );
+
 	CBaseEntity *pSpawnSpot = CBaseEntity::Instance( pentSpawnSpot );
 
 	pPlayer->SetAbsOrigin( pSpawnSpot->GetAbsOrigin() + Vector(0,0,1) );
@@ -71,6 +76,8 @@ edict_t *CGameRules :: GetPlayerSpawnSpot( CBasePlayer *pPlayer )
 	pPlayer->SetAbsAngles( pSpawnSpot->GetAbsAngles() );
 	pPlayer->pev->punchangle = g_vecZero;
 	pPlayer->pev->fixangle = TRUE;
+	if (!CoopRestorePlayerCoords(pPlayer, &pPlayer->pev->origin, &pPlayer->pev->angles))
+		CoopGetSpawnPoint(&pPlayer->pev->origin, &pPlayer->pev->angles);
 
 	if( FBitSet( pSpawnSpot->pev->spawnflags, 1 )) // the START WITH SUIT flag
 	{

@@ -1400,6 +1400,13 @@ float UTIL_VecToYaw( const Vector &vec )
 	return VEC_TO_YAW(vec);
 }
 
+void UTIL_SetOriginPev(entvars_t* pev, const Vector& vecOrigin)
+{
+	edict_t* ent = ENT(pev);
+	if (ent)
+		SET_ORIGIN(ent, vecOrigin);
+}
+
 void UTIL_SetOrigin( CBaseEntity *pEntity, const Vector &vecOrigin )
 {
 	pEntity->SetLocalOrigin( vecOrigin );
@@ -3147,5 +3154,22 @@ float UTIL_SharedRandomFloat(unsigned int seed, float low, float high)
 		offset = (float)tensixrand / 65536.0;
 
 		return (low + offset * range);
+	}
+}
+
+
+void UTIL_CleanSpawnPoint(Vector origin, float dist)
+{
+	CBaseEntity* ent = NULL;
+	while ((ent = UTIL_FindEntityInSphere(ent, origin, dist)) != NULL)
+	{
+		if (ent->IsPlayer())
+		{
+			TraceResult tr;
+			UTIL_TraceHull(ent->pev->origin + Vector(0, 0, 36), ent->pev->origin + Vector(RANDOM_FLOAT(-150, 150), RANDOM_FLOAT(-150, 150), 0), dont_ignore_monsters, human_hull, ent->edict(), &tr);
+			//UTIL_TraceModel( ent->pev->origin + Vector( 0, 0, 36), ent->pev->origin + Vector( RANDOM_FLOAT( -150, 150 ), RANDOM_FLOAT( -150, 150 ), 0 ), 0, ent->edict(), &tr);
+			if (!tr.fAllSolid)
+		     	UTIL_SetOriginPev(ent->pev, tr.vecEndPos);
+		}
 	}
 }

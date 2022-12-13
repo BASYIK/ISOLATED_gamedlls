@@ -29,8 +29,6 @@ extern int g_iGunMode;
 extern vec3_t g_vSpread;
 
 extern vec3_t v_origin;
-//extern vec3_t g_vSpread;
-//extern int g_iGunMode;
 
 int g_iAlive = 1;
 int r_currentMessageNum = 0;
@@ -118,8 +116,8 @@ void DLLEXPORT HUD_TxferLocalOverrides( struct entity_state_s *state, const stru
 	//g_iUser3 = client->iuser3;
 
 	// buz
-	//g_vSpread = client->vuser1;
-	//g_iGunMode = client->iuser4;
+	g_vSpread = client->vuser1;
+	g_iGunMode = client->iuser4;
 }
 
 /*
@@ -245,10 +243,6 @@ void DLLEXPORT HUD_TxferPredictionData ( struct entity_state_s *ps, const struct
 	pcd->vuser2 = ppcd->vuser2;
 	pcd->vuser3 = ppcd->vuser3;
 	pcd->vuser4 = ppcd->vuser4;
-
-	// buz
-	g_vSpread = pcd->vuser1;
-	g_iGunMode = pcd->iuser4;
 
 	memcpy( wd, pwd, 32 * sizeof( weapon_data_t ) );
 }
