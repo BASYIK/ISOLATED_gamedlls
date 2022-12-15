@@ -1301,8 +1301,10 @@ int AddToFullPack( struct entity_state_s *state, int e, edict_t *ent, edict_t *h
 	state->rendercolor.r = ent->v.rendercolor.x;
 	state->rendercolor.g = ent->v.rendercolor.y;
 	state->rendercolor.b = ent->v.rendercolor.z;
-	state->fuser1	= ent->v.fuser1;	// gaitframe
+	state->fuser1	 = ent->v.fuser1; // FOV
 	state->fuser2	 = ent->v.fuser2; // FOV
+	state->fuser3	 = ent->v.fuser3; // FOV
+	state->fuser4	 = ent->v.fuser4; // FOV
 	state->iuser1	 = ent->v.iuser1; // flags
 	state->iuser2	 = ent->v.iuser2; // flags
 	state->iuser3	 = ent->v.iuser3; // vertexlight cachenum

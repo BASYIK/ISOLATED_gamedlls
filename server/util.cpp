@@ -941,6 +941,22 @@ void UTIL_MakeInvVectors( const Vector &vec, globalvars_t *pgv )
 	SWAP(pgv->v_right.z, pgv->v_up.y, tmp);
 }
 
+void UTIL_ShowMessagePVS(const char* pString, const Vector& org) // buz
+{
+	// loop through all players
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBaseEntity* pPlayer = UTIL_PlayerByIndex(i);
+		if (pPlayer && pPlayer->IsNetClient())
+		{
+			//	MESSAGE_BEGIN( MSG_ONE, gmsgHudText, NULL, pEntity->edict() );
+			MESSAGE_BEGIN(MSG_ONE, gmsgHudText, org, pPlayer->edict());
+			WRITE_STRING(pString);
+			MESSAGE_END();
+		}
+	}
+}
+
 
 void UTIL_EmitAmbientSound( edict_t *entity, const Vector &vecOrigin, const char *samp, float vol, float attenuation, int fFlags, int pitch )
 {

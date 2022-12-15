@@ -3130,10 +3130,10 @@ void CBasePlayer::Spawn( void )
 
 // buz
 void CBasePlayer::ViewPunch(float p, float y, float r)
-{// vuser3 is punch speed
-	pev->vuser3[0] -= p * 20;
-	pev->vuser3[1] += y * 20;
-	pev->vuser3[2] += r * 20;
+{// fuser2-4 is punch speed
+	pev->fuser2 -= p * 20;
+	pev->fuser3 += y * 20;
+	pev->fuser4 += r * 20;
 }
 
 void CBasePlayer :: CheckCompatibility( void )

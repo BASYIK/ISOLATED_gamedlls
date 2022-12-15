@@ -186,5 +186,23 @@ public:
 
 
 
+//=========================================================
+// Bullsquid's spit projectile
+//=========================================================
+class CSquidSpit : public CBaseEntity
+{
+	DECLARE_CLASS(CSquidSpit, CBaseEntity);
+public:
+	void Spawn(void);
+
+	static void Shoot(entvars_t* pevOwner, Vector vecStart, Vector vecVelocity);
+	void Touch(CBaseEntity* pOther);
+	void Animate(void);
+
+	DECLARE_DATADESC();
+
+	int  m_maxFrame;
+};
+
 #endif	//MONSTERS_H
 

@@ -81,6 +81,7 @@ list(APPEND SVDLL_SOURCES
 	"monsters/monstermaker.cpp"
 	"monsters/monsters.cpp"
 	"monsters/monsterstate.cpp"
+	"monsters/pre_alpha_mutants.cpp"
 	"mortar.cpp"
 	"mp5.cpp"
 	"multiplay_gamerules.cpp"

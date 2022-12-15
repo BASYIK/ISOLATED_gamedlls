@@ -2177,3 +2177,62 @@ void CAmbientMusic :: Think( void )
 
 	SetNextThink( 0.01 );
 }
+
+class CRadio : public CPointEntity
+{
+public:
+	void Spawn(void);
+	void Precache(void);
+
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value);
+};
+
+LINK_ENTITY_TO_CLASS(radio_sentence, CRadio);
+
+void CRadio::Spawn()
+{
+	Precache();
+	pev->solid = SOLID_NOT;
+	pev->movetype = MOVETYPE_NONE;
+	pev->effects |= EF_NODRAW;
+}
+
+void CRadio::Precache()
+{
+	char* szSoundFile = (char*)STRING(pev->message);
+
+	if (!FStringNull(pev->message) && strlen(szSoundFile) > 1)
+	{
+		if (*szSoundFile != '!')
+			PRECACHE_SOUND(szSoundFile);
+	}
+}
+
+void CRadio::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
+{
+	char* szSoundFile = (char*)STRING(pev->message);
+
+	CBaseEntity* pPlayer = CBaseEntity::Instance(g_engfuncs.pfnPEntityOfEntIndex(1));
+	if (!FStringNull(pev->message) && strlen(szSoundFile) > 1)
+	{
+		//UTIL_EmitAmbientSound(pPlayer->edict(), pev->origin(), szSoundFile);
+
+		UTIL_EmitAmbientSound(ENT(pev), pev->origin, szSoundFile,
+			0.5, ATTN_NONE, 0, 100);
+	}
+
+/*	char* szTitle = (char*)STRING(pev->netname);
+	if (!FStringNull(pev->netname) && strlen(szTitle) > 1)
+	{
+		MESSAGE_BEGIN(MSG_ONE, NULL, NULL, pPlayer->pev);
+		WRITE_STRING(szTitle);
+		WRITE_COORD(pev->health);
+		WRITE_BYTE(pev->rendercolor.x);
+		WRITE_BYTE(pev->rendercolor.y);
+		WRITE_BYTE(pev->rendercolor.z);
+		WRITE_BYTE(pev->renderamt);
+		MESSAGE_END();
+
+	}
+*/
+}
