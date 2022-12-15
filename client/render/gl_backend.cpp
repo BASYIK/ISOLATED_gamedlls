@@ -450,6 +450,7 @@ bool GL_BackendStartFrame( ref_viewpass_t *rvp, RefParams params )
 
 	return 1;
 }
+extern int		g_iGunMode;
 
 /*
 ==============
@@ -522,7 +523,14 @@ void GL_BackendEndFrame( ref_viewpass_t *rvp, RefParams params )
 	RenderSunShafts();			// 2D
 	RenderPostprocessing();		// 2D
 	R_ShowLightMaps();			// 2D
-	
+
+	if (g_iGunMode == 3)
+	{
+		// used for lighting scope
+		R_LightVec(rvp->vieworigin, &light, true);
+		tr.ambientLight = light.diffuse;
+	}
+
 	if (!deferred && hdr_rendering) {
 		R_RenderScreenQuad();
 	}

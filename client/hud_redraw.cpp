@@ -27,6 +27,7 @@ int grgLogoFrame[MAX_LOGO_FRAMES] =
 vec3_t g_vSpread;
 int g_iGunMode = 0;
 extern vec3_t g_CrosshairAngle; // buz
+void OrthoScope(void); // buz
 
 void CHud::Think( void )
 {
@@ -107,6 +108,11 @@ int CHud :: Redraw( float flTime, int intermission )
 	// Clock was reset, reset delta
 	if( m_flTimeDelta < 0 ) m_flTimeDelta = 0;
 
+
+	if (g_iGunMode == 3) // buz: special sniper scope
+	{
+		OrthoScope();
+	}
 
 	if (!IEngineStudio.IsHardware() && m_iHeadShieldState != 1)
 		DrawHudString(XRES(10), YRES(350), XRES(600), "Using Head Shield", 180, 180, 180);

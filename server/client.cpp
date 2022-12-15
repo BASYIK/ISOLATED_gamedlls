@@ -1777,12 +1777,12 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 		cd->vuser1 = vecSpread;
 
 		// buz: send gun mode for hud indication
-		cd->iuser4 = pl->m_pActiveItem->GetMode();
+		cd->fuser1 = pl->m_pActiveItem->GetMode();
 	}
 	else
 	{
 		cd->vuser1 = g_vecZero;
-		cd->iuser4 = 0;
+		cd->fuser1 = 0;
 	}
 
 }

@@ -117,7 +117,7 @@ void DLLEXPORT HUD_TxferLocalOverrides( struct entity_state_s *state, const stru
 
 	// buz
 	g_vSpread = client->vuser1;
-	g_iGunMode = client->iuser4;
+	g_iGunMode = client->fuser1;
 }
 
 /*

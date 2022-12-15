@@ -2640,7 +2640,7 @@ void CStudioModelRenderer :: RestoreNormalFov( matrix4x4 &projMatrix, matrix4x4 
 	pglMatrixMode( GL_PROJECTION );
 	pglLoadMatrixf( RI->glstate.projectionMatrix );
 }
-
+extern int g_iGunMode;
 /*
 =================
 DrawViewModel
@@ -2658,7 +2658,7 @@ void CStudioModelRenderer :: DrawViewModel( void )
 	if( FBitSet( RI->params, RP_THIRDPERSON ) || CL_IsDead() || !UTIL_IsLocal( RI->view.entity ))
 		return;
 
-	if( !RP_NORMALPASS( ) )
+	if( !RP_NORMALPASS( ) || g_iGunMode == 3)
 		return;
 
 	// tell the particle system about visibility

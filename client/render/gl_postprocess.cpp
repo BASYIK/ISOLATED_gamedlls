@@ -16,6 +16,8 @@
 
 static CBasePostEffects	post;
 void V_RenderPostEffect(word hProgram);
+extern int g_iGunMode;
+int	g_iGunLastMode;
 
 void CBasePostEffects::InitializeTextures()
 {
@@ -284,7 +286,7 @@ void CBasePostEffects :: SetTargetViewport( void )
 
 void CBasePostEffects :: InitDepthOfField( void )
 {
-
+	g_iGunLastMode = 1;
 }
  
 void CBasePostEffects::InitAutoExposure()
@@ -326,10 +328,32 @@ void CBasePostEffects::InitAutoExposure()
 
 bool CBasePostEffects :: ProcessDepthOfField( void )
 {
-	if( !CVAR_TO_BOOL( r_dof ) ) // or no iron sight on weapon
+	if( !CVAR_TO_BOOL( r_dof ) || g_iGunMode == 1 || g_iGunMode == 0) // or no iron sight on weapon
 		return false; // disabled or unitialized
 
-	if( m_flDOFStartTime == 0.0f )
+	if (g_iGunMode != g_iGunLastMode)
+	{
+		if (g_iGunMode == 1)
+		{
+			// disable iron sight
+			m_flStartLength = m_flLastLength;
+			m_flOffsetLength = -m_flStartLength;
+			m_flDOFStartTime = tr.time;
+		}
+		else
+		{
+			// enable iron sight
+			m_flStartLength = m_flLastLength;
+			m_flOffsetLength = r_dof_focal_length->value;
+			m_flDOFStartTime = tr.time;
+		}
+
+
+		//		ALERT( at_console, "Iron sight changed( %i )\n", g_iGunMode );
+		g_iGunLastMode = g_iGunMode;
+	}
+
+	if (g_iGunLastMode == 1 && m_flDOFStartTime == 0.0f)
 		return false; // iron sight disabled
 
 	if( !Begin( )) 
