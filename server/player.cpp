@@ -413,6 +413,17 @@ void CBasePlayer :: TraceAttack( entvars_t *pevAttacker, float flDamage, Vector 
 		case HITGROUP_GENERIC:
 			break;
 		case HITGROUP_HEAD:
+			// buz: no head damage if wearing shield
+			if (m_iHeadShieldOn)
+			{
+				UTIL_Ricochet(ptr->vecEndPos, 1.0);
+				pev->punchangle.x -= 15;
+				TraceBleed(flDamage, vecDir, ptr, bitsDamageType);
+				AddMultiDamage(pevAttacker, this, flDamage, bitsDamageType);
+				flDamage *= 0.5;
+				return;
+			}
+			SpawnBlood(ptr->vecEndPos, BloodColor(), flDamage);// a little surface blood.
 			flDamage *= gSkillData.plrHead;
 			break;
 		case HITGROUP_CHEST:
@@ -471,6 +482,7 @@ int CBasePlayer :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, 
 
 	if ( ( bitsDamageType & DMG_BLAST ) && g_pGameRules->IsMultiplayer() )
 	{
+		UTIL_ScreenShake(pev->origin, 25.0, 150.0, 2.0, 120);
 		// blasts damage armor more.
 		flBonus *= 2;
 	}
@@ -527,7 +539,9 @@ int CBasePlayer :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, 
 	m_lastDamageAmount = flDamage;
 
 	// Armor. 
-	if (pev->armorvalue && !(bitsDamageType & (DMG_FALL | DMG_DROWN)) )// armor doesn't protect against fall or drown damage!
+	// buz: броня не спасает от ударов вплотную
+	// Wargon: Броня также не защищает от газа. (1.1)
+	if (pev->armorvalue && !(bitsDamageType & (DMG_FALL | DMG_DROWN | DMG_CLUB | DMG_SLASH | DMG_NERVEGAS)))// armor doesn't protect against fall or drown damage!
 	{
 		float flNew = flDamage * flRatio;
 
@@ -591,6 +605,8 @@ int CBasePlayer :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, 
 
 	m_bitsDamageType |= bitsDamage; // Save this so we can report it to the client
 	m_bitsHUDDamage = -1;  // make sure the damage bits get resent
+
+	return fTookDamage; // buz" no hev sounds
 
 	while (fTookDamage && (!ftrivial || (bitsDamage & DMG_TIMEBASED)) && ffound && bitsDamage)
 	{
@@ -2955,7 +2971,7 @@ edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer )
 				// we haven't found a place to spawn yet,  so kill any guy at the first spawn point and spawn there
 		if (!FNullEnt(pSpot))
 		{
-			if (allowmonsters.value)
+			if (g_pGameRules->IsDeathmatch())
 			{
 				UTIL_CleanSpawnPoint(pSpot->pev->origin, 128);
 			}

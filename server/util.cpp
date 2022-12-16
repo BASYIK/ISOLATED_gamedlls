@@ -967,7 +967,9 @@ void UTIL_EmitAmbientSound( edict_t *entity, const Vector &vecOrigin, const char
 	{
 		char name[32];
 		if (SENTENCEG_Lookup(samp, name) >= 0)
-			EMIT_AMBIENT_SOUND(entity, rgfl, name, vol, attenuation, fFlags, pitch);
+			EMIT_AMBIENT_SOUND(entity, rgfl, name, vol, attenuation, fFlags, pitch);	
+		    UTIL_ShowMessagePVS(samp, vecOrigin);
+
 	}
 	else
 		EMIT_AMBIENT_SOUND(entity, rgfl, samp, vol, attenuation, fFlags, pitch);
@@ -3185,7 +3187,7 @@ void UTIL_CleanSpawnPoint(Vector origin, float dist)
 			UTIL_TraceHull(ent->pev->origin + Vector(0, 0, 36), ent->pev->origin + Vector(RANDOM_FLOAT(-150, 150), RANDOM_FLOAT(-150, 150), 0), dont_ignore_monsters, human_hull, ent->edict(), &tr);
 			//UTIL_TraceModel( ent->pev->origin + Vector( 0, 0, 36), ent->pev->origin + Vector( RANDOM_FLOAT( -150, 150 ), RANDOM_FLOAT( -150, 150 ), 0 ), 0, ent->edict(), &tr);
 			if (!tr.fAllSolid)
-		     	UTIL_SetOriginPev(ent->pev, tr.vecEndPos);
+		     	UTIL_SetOrigin(ent, tr.vecEndPos);
 		}
 	}
 }

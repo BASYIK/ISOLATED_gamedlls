@@ -183,8 +183,7 @@ LINK_ENTITY_TO_CLASS(monster_mutant, CMutant)
 const char* CMutant::pPainSounds[] = {
 	"mutant/mutant_pain1.wav",
 	"mutant/mutant_pain2.wav",
-	"mutant/mutant_pain3.wav",
-	"mutant/mutant_pain4.wav"
+	"mutant/mutant_pain3.wav"
 };
 
 const char* CMutant::pIdleSounds[] = {
@@ -194,9 +193,9 @@ const char* CMutant::pIdleSounds[] = {
 };
 
 const char* CMutant::pDeathSounds[] = {
-	"mutant/mutant_death2.wav",
-	"mutant/mutant_death3.wav",
-	"mutant/mutant_death4.wav"
+	"mutant/mutant_pain1.wav",
+	"mutant/mutant_pain2.wav",
+	"mutant/mutant_pain3.wav"
 };
 
 const char* CMutant::pAttackHitSounds[] =
@@ -662,7 +661,7 @@ void CMutant::Spawn()
 
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
-	m_bloodColor = BLOOD_COLOR_GREEN;
+	m_bloodColor = BLOOD_COLOR_RED;
 	pev->effects = 0;
 	pev->health = gSkillData.zombieHealth + 300;
 	m_flFieldOfView = 0.2;// indicates the width of this monster's forward view cone ( as a dotproduct result )
@@ -954,7 +953,7 @@ void CDeadMutant::Spawn(void)
 	pev->effects = 0;
 	pev->yaw_speed = 8;
 	pev->sequence = 0;
-	m_bloodColor = BLOOD_COLOR_GREEN;
+	m_bloodColor = BLOOD_COLOR_RED;
 
 	pev->sequence = LookupSequence( m_szPoses[m_iPose] );
 	if( pev->sequence == -1 )

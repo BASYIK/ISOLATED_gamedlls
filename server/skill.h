@@ -120,6 +120,8 @@ struct skilldata_t
 	float batteryCapacity;
 	float healthchargerCapacity;
 	float healthkitCapacity;
+	float bighealthkitCapacity; // buz
+	float painkillerCapacity; // buz
 	float scientistHeal;
 
 // monster damage adj
@@ -146,6 +148,12 @@ struct skilldata_t
 	float plrDmgAsval;
 	float plrDmgRpk;
 	float plrDmgGroza;
+	float monDmgAK;
+	float monDmgAsval;
+	float monDmgGroza;
+	float monTerDmgAK;
+	float monTerDmgRPK;
+	float monDmgGlock;
 
 	float MilDmgKick;
 	float milHealth;

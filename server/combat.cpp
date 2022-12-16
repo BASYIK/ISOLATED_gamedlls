@@ -260,14 +260,16 @@ BOOL CBaseMonster :: HasHumanGibs( void )
 {
 	int myClass = Classify();
 
-	if ( myClass == CLASS_HUMAN_MILITARY ||
-		 myClass == CLASS_PLAYER_ALLY	||
-		 myClass == CLASS_HUMAN_PASSIVE  ||
-		 myClass == CLASS_PLAYER )
-
-		 return TRUE;
-
-	return FALSE;
+	// these types of monster don't use gibs
+	if (myClass == CLASS_NONE || myClass == CLASS_MACHINE ||
+		myClass == CLASS_PLAYER_BIOWEAPON && myClass == CLASS_ALIEN_BIOWEAPON)
+	{
+		return FALSE;
+	}
+	else
+	{
+		return (this->m_bloodColor == BLOOD_COLOR_RED);
+	}
 }
 
 
@@ -275,16 +277,16 @@ BOOL CBaseMonster :: HasAlienGibs( void )
 {
 	int myClass = Classify();
 
-	if ( myClass == CLASS_ALIEN_MILITARY ||
-		 myClass == CLASS_ALIEN_MONSTER	||
-		 myClass == CLASS_ALIEN_PASSIVE  ||
-		 myClass == CLASS_INSECT  ||
-		 myClass == CLASS_ALIEN_PREDATOR  ||
-		 myClass == CLASS_ALIEN_PREY )
-
-		 return TRUE;
-
-	return FALSE;
+	// these types of monster don't use gibs
+	if (myClass == CLASS_NONE || myClass == CLASS_MACHINE ||
+		myClass == CLASS_PLAYER_BIOWEAPON && myClass == CLASS_ALIEN_BIOWEAPON)
+	{
+		return FALSE;
+	}
+	else
+	{
+		return (this->m_bloodColor == BLOOD_COLOR_GREEN);
+	}
 }
 
 
@@ -627,7 +629,7 @@ void CBaseMonster :: Killed( entvars_t *pevAttacker, int iGib )
 			activator->pev->frags -= 1;
 		}
 	}
-	else if (classs >= 3)
+	else
 	{
 		if (activator && activator->IsPlayer())
 			activator->AddPoints(1, true);
@@ -1104,6 +1106,14 @@ void RadiusDamage( Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacke
 	{
 		if ( pEntity->pev->takedamage != DAMAGE_NO )
 		{
+			// buz: skip grenade damage from player's grenades to invincible monsters
+			if (pEntity->pev->spawnflags & SF_MONSTER_INVINCIBLE)
+			{
+				CBaseEntity* pEnt = CBaseEntity::Instance(pevAttacker);
+				if (pEnt->IsPlayer())
+					continue;
+			}
+
 			// UNDONE: this should check a damage mask, not an ignore
 			if ( iClassIgnore != CLASS_NONE && pEntity->Classify() == iClassIgnore )
 			{// houndeyes don't hurt other houndeyes with their attack
@@ -1330,6 +1340,7 @@ void CBaseEntity::TraceAttack(entvars_t *pevAttacker, float flDamage, Vector vec
 
 	if ( pev->takedamage )
 	{
+
 		AddMultiDamage( pevAttacker, this, flDamage, bitsDamageType );
 
 		int blood = BloodColor();
@@ -1375,13 +1386,43 @@ void CBaseMonster :: TraceAttack( entvars_t *pevAttacker, float flDamage, Vector
 {
 	if ( pev->takedamage )
 	{
+		if (pev->spawnflags & SF_MONSTER_INVINCIBLE)
+		{
+			//	ALERT(at_console, "yes im incvincible\n");
+				// check for player
+			CBaseEntity* pEnt = CBaseEntity::Instance(pevAttacker);
+			if (pEnt->IsPlayer())
+			{
+				//	ALERT(at_console, "ent is player\n");
+				return;
+			}
+
+			// check for owner (it may be grenade, thrown by player)
+			if (pevAttacker->owner)
+			{
+				pEnt = CBaseEntity::Instance(pevAttacker->owner);
+				if (pEnt->IsPlayer())
+				{
+					//	ALERT(at_console, "owner is player\n");
+					return;
+				}
+			}
+		}
+
 		m_LastHitGroup = ptr->iHitgroup;
+		TraceBleed(flDamage, vecDir, ptr, bitsDamageType);
+
+		TraceResult btr; // Wargon: Переменная для трейса декали мозгов от хедшотов.
 
 		switch ( ptr->iHitgroup )
 		{
 		case HITGROUP_GENERIC:
 			break;
 		case HITGROUP_HEAD:
+			// Wargon: Декаль мозгов от хедшотов.
+			UTIL_TraceLine(ptr->vecEndPos, ptr->vecEndPos + vecDir * 172, ignore_monsters, ENT(pev), &btr);
+			SpawnBlood(ptr->vecEndPos, BloodColor(), flDamage * 8);// a little surface blood.
+			UTIL_TraceCustomDecal(&btr, "brains");
 			flDamage *= gSkillData.monHead;
 			break;
 		case HITGROUP_CHEST:
@@ -1403,7 +1444,6 @@ void CBaseMonster :: TraceAttack( entvars_t *pevAttacker, float flDamage, Vector
 		}
 
 		SpawnBlood(ptr->vecEndPos, BloodColor(), flDamage);// a little surface blood.
-		TraceBleed( flDamage, vecDir, ptr, bitsDamageType );
 		AddMultiDamage( pevAttacker, this, flDamage, bitsDamageType );
 	}
 }
@@ -1561,7 +1601,55 @@ void CBaseEntity::FireBullets(ULONG cShots, Vector vecSrc, Vector vecDirShooting
 					DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
 				}
 				break;
-			
+
+			case BULLET_MONSTER_GLOCK: // buz
+				pEntity->TraceAttack(pevAttacker, gSkillData.monDmgGlock, vecDir, &tr, DMG_BULLET);
+
+				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+
+				break;
+
+			case BULLET_MONSTER_AK: // buz
+				pEntity->TraceAttack(pevAttacker, gSkillData.monDmgAK, vecDir, &tr, DMG_BULLET);
+
+				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+
+				break;
+
+			case BULLET_MONSTER_ASVAL: // buz
+				pEntity->TraceAttack(pevAttacker, gSkillData.monDmgAsval, vecDir, &tr, DMG_BULLET);
+
+				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+
+				break;
+
+			case BULLET_TERROR_AK: // buz
+				pEntity->TraceAttack(pevAttacker, gSkillData.monTerDmgAK, vecDir, &tr, DMG_BULLET);
+
+				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+
+				break;
+
+			case BULLET_TERROR_RPK: // buz
+				pEntity->TraceAttack(pevAttacker, gSkillData.monTerDmgRPK, vecDir, &tr, DMG_BULLET);
+
+				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+
+				break;
+
+			case BULLET_MONSTER_GROZA: // buz
+				pEntity->TraceAttack(pevAttacker, gSkillData.monDmgGroza, vecDir, &tr, DMG_BULLET);
+
+				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);
+				DecalGunshot(&tr, iBulletType, vecSrc, vecEnd);
+
+				break;
+
 			case BULLET_NONE: // FIX 
 				pEntity->TraceAttack(pevAttacker, 50, vecDir, &tr, DMG_CLUB);
 				TEXTURETYPE_PlaySound(&tr, vecSrc, vecEnd, iBulletType);

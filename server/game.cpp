@@ -1036,6 +1036,15 @@ void GameDLLInit( void )
 	CVAR_REGISTER ( &sk_healthkit2 );
 	CVAR_REGISTER ( &sk_healthkit3 );
 
+	// buz
+	CVAR_REGISTER(&sk_bighealthkit1);
+	CVAR_REGISTER(&sk_bighealthkit2);
+	CVAR_REGISTER(&sk_bighealthkit3);
+
+	CVAR_REGISTER(&sk_painkiller1);
+	CVAR_REGISTER(&sk_painkiller2);
+	CVAR_REGISTER(&sk_painkiller3);
+
 	CVAR_REGISTER ( &sk_scientist_heal1 );
 	CVAR_REGISTER ( &sk_scientist_heal2 );
 	CVAR_REGISTER ( &sk_scientist_heal3 );

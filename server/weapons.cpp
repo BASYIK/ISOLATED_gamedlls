@@ -306,6 +306,41 @@ void UTIL_PrecacheOtherWeapon( const char *szClassname )
 
 	REMOVE_ENTITY(pEntity->edict());
 }
+
+
+void UTIL_PrecacheSpecialItems(void) // buz
+{
+	ItemInfo II;
+
+	// add gasmask to weapons list
+	memset(&II, 0, sizeof II);
+	II.pszName = "gasmask";
+	II.iSlot = 0;
+	II.iPosition = 2;
+	II.iId = WEAPON_GASMASK;
+	CBasePlayerItem::ItemInfoArray[II.iId] = II;
+
+	// add head shield to weapons list
+	memset(&II, 0, sizeof II);
+	II.pszName = "headshield";
+	II.iSlot = 0;
+	II.iPosition = 1;
+	II.iId = WEAPON_HEADSHIELD;
+	CBasePlayerItem::ItemInfoArray[II.iId] = II;
+
+	// add painkiller to weapons list
+	memset(&II, 0, sizeof II);
+	II.pszName = "painkiller";
+	II.pszAmmo1 = "painkillers";
+	II.iMaxAmmo1 = 10;
+	II.iSlot = 0;
+	II.iPosition = 3;
+	II.iId = WEAPON_PAINKILLER;
+	CBasePlayerItem::ItemInfoArray[II.iId] = II;
+
+	AddAmmoNameToAmmoRegistry("painkillers");
+}
+
 void LoadSpreadTable(char* filename); // buz
 
 // called by worldspawn
@@ -383,6 +418,9 @@ void W_Precache(void)
 	// Wargon: Прекэш для RPG перемещен сюда.
 	UTIL_PrecacheOtherWeapon("weapon_rpg");
 	UTIL_PrecacheOther("ammo_rpgclip");
+
+	// buz: gasmask and head shield
+	UTIL_PrecacheSpecialItems();
 
 	UTIL_PrecacheOther("weaponbox");// container for dropped deathmatch weapons
 
@@ -1577,119 +1615,31 @@ void CLaserSpot::Precache( void )
 	PRECACHE_MODEL("sprites/laserdot.spr");
 }
 
-// BASYIK
-#define max(a, b)  (((a) > (b)) ? (a) : (b))
-#define min(a, b)  (((a) < (b)) ? (a) : (b))
-
-// OLD 
-void CBasePlayerWeapon::DefaultFire(CBasePlayer* m_pPlayer, int cShots, wepspread_t spread, float damage, int anim, char* sound, int RadOfBright)
+// buz: painkiller item
+class CPainkiller : public CBasePlayerAmmo
 {
-	if (m_iClip <= 0)
+	void Spawn(void)
 	{
-		PlayEmptySound();
-		m_flNextPrimaryAttack = 0.15;
-		return;
+		Precache();
+		SET_MODEL(ENT(pev), "models/w_painkiller.mdl");
+		CBasePlayerAmmo::Spawn();
 	}
-
-	if (anim >= 0)
-		SendWeaponAnim(anim);
-
-	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
-	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
-	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
-	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-	if (sound)
-		EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_WEAPON, sound, 1.0, ATTN_NORM, 0, 100);
-
-	cShots = min(m_iClip, cShots);
-	m_iClip -= cShots;
-
-	Vector vecSrc(m_pPlayer->GetGunPosition());
-	Vector vecAim(m_pPlayer->GetAutoaimVector(AUTOAIM_2DEGREES));
-	Vector vecAcc(g_vecZero);
-	Vector vecDir;
-	if (cShots != 1)
-		vecAcc = vec3_t(spread.SpreadX / 100, spread.SpreadY / 100, 0);
-	float spead = m_pPlayer->pev->velocity.Length();
-	if (m_pPlayer->pev->velocity.Length())
-		vecAcc = vecAcc + vec3_t(spread.SpreadY / 5000, spread.SpreadY / 5000, 0) * m_pPlayer->pev->velocity.Length();
-	if (cShots == 1)
-		vecAcc = vecAcc / 10;
-	if (!(m_pPlayer->pev->flags & FL_ONGROUND))
-		vecAcc = vecAcc + vec3_t(spread.SpreadY / 5000, spread.SpreadY / 5000, 0) * 250;
-
-	m_pPlayer->pev->punchangle.x -= RANDOM_FLOAT(spread.SpreadY / 2, spread.SpreadY);
-	m_pPlayer->pev->punchangle.y += spread.SpreadX * RANDOM_LONG(-1, 1) / 2;
-
-	if (m_pPlayer->pev->punchangle.x < -spread.MaxSpreadY)
+	void Precache(void)
 	{
-		m_pPlayer->pev->punchangle.x = -spread.MaxSpreadY + RANDOM_LONG(-2, 2);
-		m_pPlayer->pev->punchangle.y += spread.SpreadX * LeftSpread;
+		PRECACHE_MODEL("models/w_painkiller.mdl");
+		PRECACHE_SOUND("items/painkiller_pickup.wav");
 	}
-
-	if (m_pPlayer->pev->punchangle.y <= -spread.MaxSpreadX)
-		LeftSpread = 1;
-	else if (m_pPlayer->pev->punchangle.y > spread.MaxSpreadX)
-		LeftSpread = -1;
-	vecDir = m_pPlayer->FireBulletsPlayer(cShots, vecSrc, vecAim, vecAcc, 8192, 0, 0, damage, m_pPlayer->pev, m_pPlayer->random_seed);
-
-	if (!LeftSpread)
-		LeftSpread = 1;
-}
-
-
-
-void CBasePlayerWeapon::DefaultFireIronsight(CBasePlayer* m_pPlayer, int cShots, wepspread2_t spread, float damage, int anim, char* sound, int RadOfBright)
-{
-	if (m_iClip <= 0)
+	BOOL AddAmmo(CBaseEntity* pOther)
 	{
-		PlayEmptySound();
-		m_flNextPrimaryAttack = 0.15;
-		return;
+		int bResult = (pOther->GiveAmmo(1, "painkillers", 10) != -1);
+		if (bResult)
+		{
+			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/painkiller_pickup.wav", 1, ATTN_NORM);
+			pOther->pev->weapons |= (1 << WEAPON_PAINKILLER);
+			// Wargon: Возможность таргетить энтити подбором паинкиллера.
+			SUB_UseTargets(pOther, USE_TOGGLE, 0);
+		}
+		return bResult;
 	}
-
-	if (anim >= 0)
-		SendWeaponAnim(anim);
-
-	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
-	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
-	m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
-	m_pPlayer->pev->effects = (int)(m_pPlayer->pev->effects) | EF_MUZZLEFLASH;
-	if (sound)
-		EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_WEAPON, sound, 1.0, ATTN_NORM, 0, 100);
-
-	cShots = min(m_iClip, cShots);
-	m_iClip -= cShots;
-
-	Vector vecSrc(m_pPlayer->GetGunPosition());
-	Vector vecAim(m_pPlayer->GetAutoaimVector(AUTOAIM_2DEGREES));
-	Vector vecAcc(g_vecZero);
-	Vector vecDir;
-	if (cShots != 1)
-		vecAcc = vec3_t(spread.SpreadX2 / 100, spread.SpreadY2 / 100, 0);
-	float spead = m_pPlayer->pev->velocity.Length();
-	if (m_pPlayer->pev->velocity.Length())
-		vecAcc = vecAcc + vec3_t(spread.SpreadY2 / 5000, spread.SpreadY2 / 5000, 0) * m_pPlayer->pev->velocity.Length();
-	if (cShots == 1)
-		vecAcc = vecAcc / 10;
-	if (!(m_pPlayer->pev->flags & FL_ONGROUND))
-		vecAcc = vecAcc + vec3_t(spread.SpreadY2 / 5000, spread.SpreadY2 / 5000, 0) * 250;
-
-	m_pPlayer->pev->punchangle.x -= RANDOM_FLOAT(spread.SpreadY2 / 2, spread.SpreadY2);
-	m_pPlayer->pev->punchangle.y += spread.SpreadX2 * RANDOM_LONG(-1, 1) / 2;
-
-	if (m_pPlayer->pev->punchangle.x < -spread.MaxSpreadY2)
-	{
-		m_pPlayer->pev->punchangle.x = -spread.MaxSpreadY2 + RANDOM_LONG(-2, 2);
-		m_pPlayer->pev->punchangle.y += spread.SpreadX2 * LeftSpread;
-	}
-
-	if (m_pPlayer->pev->punchangle.y <= -spread.MaxSpreadX2)
-		LeftSpread = 1;
-	else if (m_pPlayer->pev->punchangle.y > spread.MaxSpreadX2)
-		LeftSpread = -1;
-	vecDir = m_pPlayer->FireBulletsPlayer(cShots, vecSrc, vecAim, vecAcc, 8192, 0, 0, damage, m_pPlayer->pev, m_pPlayer->random_seed);
-
-	if (!LeftSpread)
-		LeftSpread = 1;
-}
+};
+LINK_ENTITY_TO_CLASS(item_painkiller, CPainkiller);

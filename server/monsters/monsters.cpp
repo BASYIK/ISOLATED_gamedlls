@@ -2186,7 +2186,7 @@ int CBaseMonster::TaskIsRunning( void )
 //=========================================================
 int CBaseMonster::IRelationship ( CBaseEntity *pTarget )
 {
-	static int iEnemy[17][17] =
+	static int iEnemy[18][18] =
 	{			 //   NONE	MACH	PLYR	HPASS	HMIL	AMIL	APASS	AMONST	APREY	APRED	INSECT	PLRALY	PBWPN	ABWPN	FACT_A	FACT_B	FACT_C
 	/*NONE*/		{ R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO,	R_NO },
 	/*MACHINE*/		{ R_NO,	R_NO,	R_DL,	R_DL,	R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL },
@@ -2204,7 +2204,8 @@ int CBaseMonster::IRelationship ( CBaseEntity *pTarget )
 	/*ABIOWEAPON*/	{ R_NO,	R_NO,	R_DL,	R_DL,	R_DL,	R_AL,	R_NO,	R_DL,	R_DL,	R_NO,	R_NO,	R_DL,	R_DL,	R_NO,	R_DL,	R_DL,	R_DL },
 	/*FACTION_A*/   { R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_NO,	R_DL,	R_DL,	R_DL,	R_AL,	R_DL,	R_DL },
 	/*FACTION_B*/   { R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_AL,	R_DL },
-	/*FACTION_C*/   { R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_AL }
+	/*FACTION_C*/   { R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_AL },
+	/*TERRORISTS*/  { R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_NO,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_DL,	R_AL} // buz
 	};
 
 	int iTargClass = pTarget->Classify();

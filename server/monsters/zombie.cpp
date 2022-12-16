@@ -23,6 +23,9 @@
 #include	"cbase.h"
 #include	"monsters.h"
 #include	"schedule.h"
+// Wargon: Чтобы работали SpawnBlood и AddMultiDamage. (1.1)
+#include "weapons.h"
+
 
 
 //=========================================================
@@ -59,34 +62,54 @@ public:
 	static const char *pAttackHitSounds[];
 	static const char *pAttackMissSounds[];
 
+	// Wargon: Особые звуки для потолочника и паука.
+	static const char* pCeilingAlertSounds[];
+	static const char* pCeilingAttackSounds[];
+	static const char* pCeilingPainSounds[];
+	static const char* pSpiderAlertSounds[];
+	static const char* pSpiderAttackSounds[];
+	static const char* pSpiderPainSounds[];
+
+	/// Зомби-Спецзазовец (зомбайн)
+
+	static const char* pZombineAlertSounds[];
+	static const char* pZombineAttackSounds[];
+	static const char* pZombinePainSounds[];
+	static const char* pZombineDieSounds[];
+
 	// No range attacks
 	BOOL CheckRangeAttack1 ( float flDot, float flDist ) { return FALSE; }
 	BOOL CheckRangeAttack2 ( float flDot, float flDist ) { return FALSE; }
 	int TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType );
+
+	// Wargon: Отдельные множители повреждений по хитгруппам для monster_zombie. (1.1)
+	void TraceAttack(entvars_t* pevAttacker, float flDamage, Vector vecDir, TraceResult* ptr, int bitsDamageType);
+
 };
 
 LINK_ENTITY_TO_CLASS( monster_zombie, CZombie );
 
-const char *CZombie::pAttackHitSounds[] = 
+
+const char* CZombie::pAttackHitSounds[] =
 {
 	"zombie/claw_strike1.wav",
 	"zombie/claw_strike2.wav",
 	"zombie/claw_strike3.wav",
 };
 
-const char *CZombie::pAttackMissSounds[] = 
+const char* CZombie::pAttackMissSounds[] =
 {
 	"zombie/claw_miss1.wav",
 	"zombie/claw_miss2.wav",
 };
 
-const char *CZombie::pAttackSounds[] = 
+const char* CZombie::pAttackSounds[] =
 {
 	"zombie/zo_attack1.wav",
 	"zombie/zo_attack2.wav",
 };
 
-const char *CZombie::pIdleSounds[] = 
+const char* CZombie::pIdleSounds[] =
 {
 	"zombie/zo_idle1.wav",
 	"zombie/zo_idle2.wav",
@@ -94,18 +117,85 @@ const char *CZombie::pIdleSounds[] =
 	"zombie/zo_idle4.wav",
 };
 
-const char *CZombie::pAlertSounds[] = 
+const char* CZombie::pAlertSounds[] =
 {
 	"zombie/zo_alert10.wav",
 	"zombie/zo_alert20.wav",
 	"zombie/zo_alert30.wav",
 };
 
-const char *CZombie::pPainSounds[] = 
+const char* CZombie::pPainSounds[] =
 {
 	"zombie/zo_pain1.wav",
 	"zombie/zo_pain2.wav",
 };
+
+///// Зомбайн
+
+// Wargon: Особые звуки для потолочника и паука.
+const char* CZombie::pZombineAlertSounds[] =
+{
+	"zombie_a/zo_alert10.wav",
+	"zombie_a/zo_alert20.wav",
+	"zombie_a/zo_alert30.wav",
+};
+
+const char* CZombie::pZombinePainSounds[] =
+{
+	"zombie_a/zo_pain1.wav",
+	"zombie_a/zo_pain2.wav",
+};
+
+const char* CZombie::pZombineAttackSounds[] =
+{
+	"zombie_a/zo_attack1.wav",
+	"zombie_a/zo_attack2.wav",
+};
+
+const char* CZombie::pZombineDieSounds[] =
+{
+	"zombie_a/zo_die1.wav",
+};
+
+// Wargon: Особые звуки для потолочника и паука.
+const char* CZombie::pCeilingAlertSounds[] =
+{
+	"potolo4nik/zo_alert10.wav",
+	"potolo4nik/zo_alert20.wav",
+	"potolo4nik/zo_alert30.wav",
+};
+
+const char* CZombie::pCeilingAttackSounds[] =
+{
+	"potolo4nik/zo_attack1.wav",
+	"potolo4nik/zo_attack2.wav",
+};
+
+const char* CZombie::pCeilingPainSounds[] =
+{
+	"potolo4nik/zo_pain1.wav",
+	"potolo4nik/zo_pain2.wav",
+};
+
+const char* CZombie::pSpiderAlertSounds[] =
+{
+	"spider/zo_alert10.wav",
+	"spider/zo_alert20.wav",
+	"spider/zo_alert30.wav",
+};
+
+const char* CZombie::pSpiderAttackSounds[] =
+{
+	"spider/zo_attack1.wav",
+	"spider/zo_attack2.wav",
+};
+
+const char* CZombie::pSpiderPainSounds[] =
+{
+	"spider/zo_pain1.wav",
+	"spider/zo_pain2.wav",
+};
+
 
 //=========================================================
 // Classify - indicates this monster's place in the 
@@ -137,6 +227,10 @@ void CZombie :: SetYawSpeed ( void )
 
 int CZombie :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType )
 {
+	// buz: refuse gas damage
+	if (bitsDamageType & DMG_NERVEGAS)
+		return 0;
+
 	// Take 30% damage from bullets
 	if ( bitsDamageType == DMG_BULLET )
 	{
@@ -153,35 +247,105 @@ int CZombie :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, floa
 	return CBaseMonster::TakeDamage( pevInflictor, pevAttacker, flDamage, bitsDamageType );
 }
 
-void CZombie :: PainSound( void )
+// Wargon: Отдельные множители повреждений по хитгруппам для monster_zombie. (1.1)
+void CZombie::TraceAttack(entvars_t* pevAttacker, float flDamage, Vector vecDir, TraceResult* ptr, int bitsDamageType)
 {
-	int pitch = 95 + RANDOM_LONG(0,9);
-
-	if (RANDOM_LONG(0,5) < 2)
-		EMIT_SOUND_DYN ( ENT(pev), CHAN_VOICE, pPainSounds[ RANDOM_LONG(0,ARRAYSIZE(pPainSounds)-1) ], 1.0, ATTN_NORM, 0, pitch );
+	if (pev->takedamage)
+	{
+		if (pev->spawnflags & SF_MONSTER_INVINCIBLE)
+		{
+			CBaseEntity* pEnt = CBaseEntity::Instance(pevAttacker);
+			if (pEnt->IsPlayer())
+				return;
+			if (pevAttacker->owner)
+			{
+				pEnt = CBaseEntity::Instance(pevAttacker->owner);
+				if (pEnt->IsPlayer())
+					return;
+			}
+		}
+		m_LastHitGroup = ptr->iHitgroup;
+		TraceBleed(flDamage, vecDir, ptr, bitsDamageType);
+		TraceResult btr;
+		switch (ptr->iHitgroup)
+		{
+		case HITGROUP_GENERIC:
+			break;
+		case HITGROUP_HEAD:
+			UTIL_TraceLine(ptr->vecEndPos, ptr->vecEndPos + vecDir * 172, ignore_monsters, ENT(pev), &btr);
+			UTIL_TraceCustomDecal(&btr, "brains");
+			SpawnBlood(ptr->vecEndPos, BloodColor(), flDamage * 4);
+			flDamage *= gSkillData.zomHead;
+			break;
+		case HITGROUP_CHEST:
+			flDamage *= gSkillData.zomChest;
+			break;
+		case HITGROUP_STOMACH:
+			flDamage *= gSkillData.zomStomach;
+			break;
+		case HITGROUP_LEFTARM:
+		case HITGROUP_RIGHTARM:
+			flDamage *= gSkillData.zomArm;
+			break;
+		case HITGROUP_LEFTLEG:
+		case HITGROUP_RIGHTLEG:
+			flDamage *= gSkillData.zomLeg;
+			break;
+		default:
+			break;
+		}
+		SpawnBlood(ptr->vecEndPos, BloodColor(), flDamage * 2);
+		AddMultiDamage(pevAttacker, this, flDamage, bitsDamageType);
+	}
 }
 
-void CZombie :: AlertSound( void )
+// Wargon: Добавлены особые звуки в Alert, Attack и Pain для потолочника и паука.
+void CZombie::AlertSound(void)
 {
-	int pitch = 95 + RANDOM_LONG(0,9);
-
-	EMIT_SOUND_DYN ( ENT(pev), CHAN_VOICE, pAlertSounds[ RANDOM_LONG(0,ARRAYSIZE(pAlertSounds)-1) ], 1.0, ATTN_NORM, 0, pitch );
+	int pitch = 95 + RANDOM_LONG(0, 9);
+	if (FStrEq(STRING(pev->model), "models/zombie_c.mdl"))
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pCeilingAlertSounds[RANDOM_LONG(0, ARRAYSIZE(pCeilingAlertSounds) - 1)], 1.0, ATTN_NORM, 0, pitch);
+	else if (FStrEq(STRING(pev->model), "models/spider.mdl"))
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pSpiderAlertSounds[RANDOM_LONG(0, ARRAYSIZE(pSpiderAlertSounds) - 1)], 1.0, ATTN_NORM, 0, pitch);
+	else if (FStrEq(STRING(pev->model), "models/zombie_a.mdl"))
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pZombineAlertSounds[RANDOM_LONG(0, ARRAYSIZE(pZombineAlertSounds) - 1)], 1.0, ATTN_NORM, 0, pitch);
+	else
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pAlertSounds[RANDOM_LONG(0, ARRAYSIZE(pAlertSounds) - 1)], 1.0, ATTN_NORM, 0, pitch);
 }
 
-void CZombie :: IdleSound( void )
+void CZombie::AttackSound(void)
 {
-	int pitch = 95 + RANDOM_LONG(0,9);
-
-	// Play a random idle sound
-	EMIT_SOUND_DYN ( ENT(pev), CHAN_VOICE, pIdleSounds[ RANDOM_LONG(0,ARRAYSIZE(pIdleSounds)-1) ], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5,5) );
+	if (FStrEq(STRING(pev->model), "models/zombie_c.mdl"))
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pCeilingAttackSounds[RANDOM_LONG(0, ARRAYSIZE(pCeilingAttackSounds) - 1)], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5, 5));
+	else if (FStrEq(STRING(pev->model), "models/spider.mdl"))
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pSpiderAttackSounds[RANDOM_LONG(0, ARRAYSIZE(pSpiderAttackSounds) - 1)], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5, 5));
+	else if (FStrEq(STRING(pev->model), "models/zombie_a.mdl"))
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pZombineAttackSounds[RANDOM_LONG(0, ARRAYSIZE(pZombineAttackSounds) - 1)], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5, 5));
+	else
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pAttackSounds[RANDOM_LONG(0, ARRAYSIZE(pAttackSounds) - 1)], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5, 5));
 }
 
-void CZombie :: AttackSound( void )
+void CZombie::PainSound(void)
 {
-	// Play a random attack sound
-	EMIT_SOUND_DYN ( ENT(pev), CHAN_VOICE, pAttackSounds[ RANDOM_LONG(0,ARRAYSIZE(pAttackSounds)-1) ], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5,5) );
+	int pitch = 95 + RANDOM_LONG(0, 9);
+	if (RANDOM_LONG(0, 5) < 2)
+	{
+		if (FStrEq(STRING(pev->model), "models/zombie_c.mdl"))
+			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pCeilingPainSounds[RANDOM_LONG(0, ARRAYSIZE(pCeilingPainSounds) - 1)], 1.0, ATTN_NORM, 0, pitch);
+		else if (FStrEq(STRING(pev->model), "models/spider.mdl"))
+			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pSpiderPainSounds[RANDOM_LONG(0, ARRAYSIZE(pSpiderPainSounds) - 1)], 1.0, ATTN_NORM, 0, pitch);
+		else if (FStrEq(STRING(pev->model), "models/zombie_a.mdl"))
+			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pZombinePainSounds[RANDOM_LONG(0, ARRAYSIZE(pZombinePainSounds) - 1)], 1.0, ATTN_NORM, 0, pitch);
+		else
+			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pPainSounds[RANDOM_LONG(0, ARRAYSIZE(pPainSounds) - 1)], 1.0, ATTN_NORM, 0, pitch);
+	}
 }
 
+void CZombie::IdleSound(void)
+{
+	int pitch = 95 + RANDOM_LONG(0, 9);
+	EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, pIdleSounds[RANDOM_LONG(0, ARRAYSIZE(pIdleSounds) - 1)], 1.0, ATTN_NORM, 0, 100 + RANDOM_LONG(-5, 5));
+}
 
 //=========================================================
 // HandleAnimEvent - catches the monster-specific messages
@@ -276,11 +440,18 @@ void CZombie :: Spawn()
 		SET_MODEL(ENT(pev), STRING(pev->model)); //LRC
 	else
 		SET_MODEL(ENT(pev), "models/zombie.mdl");
-	UTIL_SetSize( pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX );
+
+	// Wargon: Особые размеры для потолочника и паука.
+	if (FStrEq(STRING(pev->model), "models/zombie_c.mdl"))
+		UTIL_SetSize(pev, Vector(-16, -16, 0), Vector(16, 16, 128));
+	else if (FStrEq(STRING(pev->model), "models/spider.mdl"))
+		UTIL_SetSize(pev, Vector(-32, -32, 0), Vector(32, 32, 64));
+	else
+		UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 
 	pev->solid			= SOLID_SLIDEBOX;
 	pev->movetype		= MOVETYPE_STEP;
-	m_bloodColor		= BLOOD_COLOR_GREEN;
+	m_bloodColor		= BLOOD_COLOR_RED;
 	if (!pev->health) pev->health	= gSkillData.zombieHealth;
 	pev->view_ofs		= VEC_VIEW;// position of the eyes relative to monster's origin.
 	m_flFieldOfView		= 0.5;// indicates the width of this monster's forward view cone ( as a dotproduct result )
@@ -297,28 +468,71 @@ void CZombie :: Precache()
 {
 	int i;
 
-	if (pev->model)
-		PRECACHE_MODEL((char*)STRING(pev->model)); //LRC
+	if (FStrEq(STRING(pev->model), "models/zombie_c.mdl"))
+	{
+		PRECACHE_MODEL("models/zombie_c.mdl");
+
+		for (i = 0; i < ARRAYSIZE(pCeilingAlertSounds); i++)
+			PRECACHE_SOUND((char*)pCeilingAlertSounds[i]);
+
+		for (i = 0; i < ARRAYSIZE(pCeilingAttackSounds); i++)
+			PRECACHE_SOUND((char*)pCeilingAttackSounds[i]);
+
+		for (i = 0; i < ARRAYSIZE(pCeilingPainSounds); i++)
+			PRECACHE_SOUND((char*)pCeilingPainSounds[i]);
+	}
+	else if (FStrEq(STRING(pev->model), "models/spider.mdl"))
+	{
+		PRECACHE_MODEL("models/spider.mdl");
+
+		for (i = 0; i < ARRAYSIZE(pSpiderAlertSounds); i++)
+			PRECACHE_SOUND((char*)pSpiderAlertSounds[i]);
+
+		for (i = 0; i < ARRAYSIZE(pSpiderAttackSounds); i++)
+			PRECACHE_SOUND((char*)pSpiderAttackSounds[i]);
+
+		for (i = 0; i < ARRAYSIZE(pSpiderPainSounds); i++)
+			PRECACHE_SOUND((char*)pSpiderPainSounds[i]);
+	}
+	else if (FStrEq(STRING(pev->model), "models/zombie_a.mdl"))
+	{
+		PRECACHE_MODEL("models/zombie_a.mdl");
+
+		for (i = 0; i < ARRAYSIZE(pZombineAlertSounds); i++)
+			PRECACHE_SOUND((char*)pZombineAlertSounds[i]);
+
+		for (i = 0; i < ARRAYSIZE(pZombineAttackSounds); i++)
+			PRECACHE_SOUND((char*)pZombineAttackSounds[i]);
+
+		for (i = 0; i < ARRAYSIZE(pZombinePainSounds); i++)
+			PRECACHE_SOUND((char*)pZombinePainSounds[i]);
+	}
+
 	else
-		PRECACHE_MODEL("models/zombie.mdl");
+	{
+		if (pev->model)
+			PRECACHE_MODEL((char*)STRING(pev->model));
+		else
+			PRECACHE_MODEL("models/zombie.mdl");
 
-	for ( i = 0; i < ARRAYSIZE( pAttackHitSounds ); i++ )
-		PRECACHE_SOUND((char *)pAttackHitSounds[i]);
+		for (i = 0; i < ARRAYSIZE(pAlertSounds); i++)
+			PRECACHE_SOUND((char*)pAlertSounds[i]);
 
-	for ( i = 0; i < ARRAYSIZE( pAttackMissSounds ); i++ )
-		PRECACHE_SOUND((char *)pAttackMissSounds[i]);
+		for (i = 0; i < ARRAYSIZE(pAttackSounds); i++)
+			PRECACHE_SOUND((char*)pAttackSounds[i]);
 
-	for ( i = 0; i < ARRAYSIZE( pAttackSounds ); i++ )
-		PRECACHE_SOUND((char *)pAttackSounds[i]);
+		for (i = 0; i < ARRAYSIZE(pPainSounds); i++)
+			PRECACHE_SOUND((char*)pPainSounds[i]);
+	}
 
-	for ( i = 0; i < ARRAYSIZE( pIdleSounds ); i++ )
-		PRECACHE_SOUND((char *)pIdleSounds[i]);
+	for (i = 0; i < ARRAYSIZE(pIdleSounds); i++)
+		PRECACHE_SOUND((char*)pIdleSounds[i]);
 
-	for ( i = 0; i < ARRAYSIZE( pAlertSounds ); i++ )
-		PRECACHE_SOUND((char *)pAlertSounds[i]);
+	for (i = 0; i < ARRAYSIZE(pAttackHitSounds); i++)
+		PRECACHE_SOUND((char*)pAttackHitSounds[i]);
 
-	for ( i = 0; i < ARRAYSIZE( pPainSounds ); i++ )
-		PRECACHE_SOUND((char *)pPainSounds[i]);
+	for (i = 0; i < ARRAYSIZE(pAttackMissSounds); i++)
+		PRECACHE_SOUND((char*)pAttackMissSounds[i]);
 }	
 
 //=========================================================

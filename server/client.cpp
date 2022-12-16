@@ -39,6 +39,7 @@
 #include "usercmd.h"
 #include "netadr.h"
 #include <locale>
+#include "skill.h"
 
 extern DLL_GLOBAL ULONG		g_ulModelIndexPlayer;
 extern DLL_GLOBAL BOOL		g_fGameOver;
@@ -474,6 +475,27 @@ void ClientCommand( edict_t *pEntity )
 	{
 		CBasePlayer* pPlayer = GetClassPtr((CBasePlayer*)pev);
 		pPlayer->ToggleHeadShield();
+	}
+	else if (FStrEq(pcmd, "painkiller"))
+	{
+		CBasePlayer* pPlayer = GetClassPtr((CBasePlayer*)pev);
+		int i = pPlayer->GetAmmoIndex("painkillers");
+
+		if (i < 0 || i >= MAX_AMMO_SLOTS)
+			return;
+
+		if (pPlayer->m_rgAmmo[i] > 0)
+		{
+			if (pPlayer->TakeHealth(gSkillData.painkillerCapacity, DMG_GENERIC))
+			{
+				pPlayer->m_rgAmmo[i]--;
+				EMIT_SOUND_DYN(pPlayer->edict(), CHAN_WEAPON, "items/painkiller_use.wav", 1.0, ATTN_NORM, 0, PITCH_NORM);
+
+
+				if (pPlayer->m_rgAmmo[i] == 0)
+					pPlayer->pev->weapons &= ~(1 << WEAPON_PAINKILLER);
+			}
+		}
 	}
 	else if ( g_pGameRules->ClientCommand( GetClassPtr((CBasePlayer *)pev), pcmd ) )
 	{

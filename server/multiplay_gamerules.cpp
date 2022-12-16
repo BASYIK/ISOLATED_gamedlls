@@ -502,6 +502,8 @@ class CWeaponList
 {
 	char weapons[64][256];
 	int m_iWeapons;
+	int ammo[MAX_AMMO_SLOTS];
+
 public:
 	void AddWeapon(const char* classname)
 	{

@@ -72,6 +72,9 @@ class CApache : public CBaseMonster
 
 	Vector m_vecGoal;
 
+	// Wargon: Оверрайд релатионшипа вертолета. (1.1)
+	int IRelationship(CBaseEntity* pTarget);
+
 	Vector m_angGun;
 	float m_flLastSeen;
 	float m_flPrevSeen;
@@ -111,6 +114,14 @@ BEGIN_DATADESC( CApache )
 	DEFINE_FUNCTION( StartupUse ),
 	DEFINE_FUNCTION( NullThink ),
 END_DATADESC()
+
+// Wargon: Вертолет не считает альфовцев врагами. (1.1)
+int CApache::IRelationship(CBaseEntity* pTarget)
+{
+	if (FClassnameIs(pTarget->pev, "monster_human_alpha"))
+		return R_NO;
+	return CBaseMonster::IRelationship(pTarget);
+}
 
 
 void CApache :: Spawn( void )
@@ -191,6 +202,9 @@ void CApache::NullThink( void )
 
 void CApache::StartupUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
+	// Wargon: Фикс несбиваемости вертолета.
+	pev->spawnflags &= ~SF_MONSTER_INVINCIBLE;
+
 	SetThink( &CApache::HuntThink );
 	SetTouch( &CApache::FlyTouch );
 	pev->nextthink = gpGlobals->time + 0.1;
@@ -210,6 +224,10 @@ void CApache :: Killed( entvars_t *pevAttacker, int iGib )
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->health = 0;
 	pev->takedamage = DAMAGE_NO;
+
+	// Wargon: Фикс несрабатывания триггера при смерти вертолета.
+	pev->deadflag = DEAD_DEAD;
+	FCheckAITrigger();
 
 	if (pev->spawnflags & SF_NOWRECKAGE)
 	{
@@ -485,7 +503,8 @@ void CApache :: HuntThink( void )
 			if (m_flLastSeen < gpGlobals->time - 5)
 				m_flPrevSeen = gpGlobals->time;
 			m_flLastSeen = gpGlobals->time;
-			m_posTarget = m_hEnemy->Center( );
+			// Wargon: Фикс точки прицеливания.
+			m_posTarget = m_hEnemy->Center() + Vector(-16, 16, 64);
 		}
 		else
 		{

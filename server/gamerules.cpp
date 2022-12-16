@@ -302,6 +302,9 @@ void CGameRules::RefreshSkillData ( void )
 	gSkillData.healthkitCapacity = GetSkillCvar ( "sk_healthkit" );
 	gSkillData.scientistHeal = GetSkillCvar ( "sk_scientist_heal" );
 
+	gSkillData.painkillerCapacity = GetSkillCvar("sk_painkiller"); // buz
+	gSkillData.bighealthkitCapacity = GetSkillCvar("sk_bighealthkit"); // buz
+
 	// monster damage adj
 	gSkillData.monHead = GetSkillCvar( "sk_monster_head" );
 	gSkillData.monChest = GetSkillCvar( "sk_monster_chest" );
@@ -315,6 +318,13 @@ void CGameRules::RefreshSkillData ( void )
 	gSkillData.plrStomach = GetSkillCvar( "sk_player_stomach" );
 	gSkillData.plrLeg = GetSkillCvar( "sk_player_leg" );
 	gSkillData.plrArm = GetSkillCvar( "sk_player_arm" );
+
+	// Wargon: Можители дамаги для monster_zombie. (1.1)
+	gSkillData.zomHead = GetSkillCvar("sk_zombie_head");
+	gSkillData.zomChest = GetSkillCvar("sk_zombie_chest");
+	gSkillData.zomStomach = GetSkillCvar("sk_zombie_stomach");
+	gSkillData.zomLeg = GetSkillCvar("sk_zombie_leg");
+	gSkillData.zomArm = GetSkillCvar("sk_zombie_arm");
 
 	//basyik 
 
@@ -340,6 +350,13 @@ void CGameRules::RefreshSkillData ( void )
 	gSkillData.plrDmgAsval = GetSkillCvar("sk_plr_asval");
 	gSkillData.plrDmgRpk = GetSkillCvar("sk_plr_rpk");
 	gSkillData.plrDmgGroza = GetSkillCvar("sk_plr_groza");
+
+	gSkillData.monDmgAK = GetSkillCvar("sk_ak_bullet"); // buz
+	gSkillData.monDmgAsval = GetSkillCvar("sk_asval_bullet"); // buz
+	gSkillData.monDmgGroza = GetSkillCvar("sk_groza_bullet"); // buz
+	gSkillData.monTerDmgRPK = GetSkillCvar("sk_ter_rpk_bullet"); // buz
+	gSkillData.monTerDmgAK = GetSkillCvar("sk_ter_ak_bullet"); // buz
+	gSkillData.monDmgGlock = GetSkillCvar("sk_glock_bullet"); // buz
 }
 
 //=========================================================
