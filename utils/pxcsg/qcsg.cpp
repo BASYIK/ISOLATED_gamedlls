@@ -18,13 +18,15 @@
 #define DEFAULT_NULLIFYTRIGGER	true
 #define DEFAULT_WADTEXTURES		true
 #define DEFAULT_NOCLIP			false
+#define DEFAULT_COMPAT_GOLDSRC	false
 //#define ENABLE_TESTMAP
 
-// acutal compiler settings
+// actual compiler settings
 bool		g_onlyents = DEFAULT_ONLYENTS;
 bool		g_wadtextures = DEFAULT_WADTEXTURES;
 bool		g_nullifytrigger = DEFAULT_NULLIFYTRIGGER;
 bool		g_noclip = DEFAULT_NOCLIP;
+bool		g_compatibility_goldsrc = DEFAULT_COMPAT_GOLDSRC;
 vec_t		g_csgepsilon = CSGCHOP_EPSILON;
 
 static FILE	*out_surfaces[MAX_MAP_HULLS];
@@ -626,6 +628,7 @@ static void PrintCsgSettings( void )
 	Msg( "noclip                [ %7s ] [ %7s ]\n", g_noclip ? "on" : "off", DEFAULT_NOCLIP ? "on" : "off" );
 	Msg( "onlyents              [ %7s ] [ %7s ]\n", g_onlyents ? "on" : "off", DEFAULT_ONLYENTS ? "on" : "off" );
 	Msg( "CSG chop epsilon      [ %.6f] [ %.6f]\n", g_csgepsilon, CSGCHOP_EPSILON );
+	Msg( "GoldSrc compatible    [ %7s ] [ %7s ]\n", g_compatibility_goldsrc ? "on" : "off", DEFAULT_COMPAT_GOLDSRC ? "on" : "off" );
 	Msg( "\n" );
 }
 
@@ -646,10 +649,24 @@ static void PrintCsgUsage( void )
  	Msg( "    -nowadtextures   : include all used textures into bsp\n" );
 	Msg( "    -wadinclude file : place textures used from wad specified into bsp\n" );
 	Msg( "    -nonullifytrigger: remove 'aaatrigger' visible faces\n" );
+	Msg( "    -compat <type>   : enable compatibility mode (goldsrc/xashxt)\n" );
 	Msg( "    -epsilon         : CSG chop precision epsilon\n" );
 	Msg( "    mapfile          : the mapfile to compile\n\n" );
+}
 
-	exit( 1 );
+/*
+============
+CheckDeprecatedParameter
+
+checks should be parameter ignored or not
+============
+*/
+static bool CheckDeprecatedParameter(const char *name)
+{
+	if (!Q_strcmp(name, "-wadautodetect"))
+		return true;
+	else
+		return false;
 }
 
 /*
@@ -663,7 +680,7 @@ int main( int argc, char **argv )
 	char	mapname[1024];
 	double	start, end;
 	char	str[64];
-	int	i;
+	int		i;
 
 	atexit( Sys_CloseLog );
 	Sys_SetupCrashHandler();
@@ -671,7 +688,18 @@ int main( int argc, char **argv )
 
 	for( i = 1; i < argc; i++ )
 	{
-		if( !Q_strcmp( argv[i], "-dev" ))
+		if (CheckDeprecatedParameter(argv[i]))
+		{
+			// compatibility issues, does nothing
+		}
+		else if (!Q_strcmp(argv[i], "-compat"))
+		{
+			i++;
+			if (!Q_strcmp(argv[i], "goldsrc")) {
+				g_compatibility_goldsrc = true;
+			}
+		}
+		else if( !Q_strcmp( argv[i], "-dev" ))
 		{
 			SetDeveloperLevel( atoi( argv[i+1] ));
 			i++;
@@ -725,11 +753,14 @@ int main( int argc, char **argv )
 		}
 	}
 
-	if( i != argc || !source[0] )
+	if (i != argc || !source[0])
 	{
-		if( !source[0] )
-			Msg( "no mapfile specified\n" );
+		if (!source[0]) {
+			Msg("no mapfile specified\n");
+		}
+
 		PrintCsgUsage();
+		exit(1);
 	}
 
 	start = I_FloatTime ();
