@@ -25,6 +25,7 @@ GNU General Public License for more details.
 #include "activity.h"
 #include "activitymap.h"
 #include "crashhandler.h"
+#include "app_info.h"
 #include "build_info.h"
 
 CUtlArray< char >	g_KeyValueText;
@@ -5411,16 +5412,45 @@ void ParseScript( void )
 	}
 }
 
-void PrintTitle()
+static void PrintTitle(bool printUsage = true)
 {
-	Msg("	PrimeXT Studio Model Compiler\n");
-	Msg("	Based on P2:Savior Studio Model Compiler\n");
-	Msg("	Copyright (^1c^7) XashXT Group 2018\n");
-	Msg("	Built %s, commit %s, arch %s\n\n\n", 
-		BuildInfo::GetDate(), 
-		BuildInfo::GetCommitHash(), 
-		BuildInfo::GetArchitecture()
+	Msg("\n");
+	Msg("  pxstudiomdl - advanced, crossplatform studiomodel compiler, based on p2studiomdl\n");
+	Msg("  Version     : %s (^1%s ^7/ ^2%s ^7/ ^3%s ^7/ ^4%s^7)\n",
+		APP_VERSION_STRING,
+		BuildInfo::GetDate(),
+		BuildInfo::GetCommitHash(),
+		BuildInfo::GetArchitecture(),
+		BuildInfo::GetPlatform()
 	);
+	Msg("  Website     : https://github.com/SNMetamorph/PrimeXT\n");
+
+	if (printUsage) {
+		Msg("  Usage       : pxstudiomdl <options> file.qc\n");
+	}
+	Msg("\n");
+}
+
+static void PrintOptionsList()
+{
+	Msg("  Options list:\n"
+		"     ^5-t^7   : replace all model textures with specified\n"
+		"     ^5-r^7   : tag reversed\n"
+		"     ^5-n^7   : tag bad normals\n"
+		"     ^5-f^7   : flip all triangles\n"
+		"     ^5-a^7   : normal blend angle\n"
+		"     ^5-h^7   : dump hitboxes\n"
+		"     ^5-g^7   : dump transition graph\n"
+		"     ^5-ath^7 : alpha threshold for transparency (0.0 - 1.0, default is 0.5)\n"
+		"     ^5-dev^7 : set message verbose level (1-5, default is 3)\n"
+		"\n"
+	);
+}
+
+static void WaitForKey()
+{
+	Msg("Press any key to exit...\n");
+	Sys_WaitForKeyInput();
 }
 
 int main( int argc, char **argv )
@@ -5450,75 +5480,73 @@ int main( int argc, char **argv )
 	allow_boneweights = 0;
 	has_boneweights = 0;
 	g_gamma = 1.8f;
+	g_alpha_threshold = 0.5f;
 
 	if( argc == 1 )
 	{
 		PrintTitle();
-		Msg( "usage: studiomdl <options> file.qc\n"
-		"\nlist options:\n"
-		"^2-t^7 - replace all model textures with specified\n"
-		"^2-r^7 - tag reversed\n"
-		"^2-n^7 - tag bad normals\n"
-		"^2-f^7 - flip all triangles\n"
-		"^2-a^7 - normal blend angle\n"
-		"^2-h^7 - dump hitboxes\n"
-		"^2-g^7 - dump transition graph\n"
-		"^2-dev^7 - shows developer messages\n"
-		"\n\t\tPress any key to exit" );
-
-		system( "pause>nul" );
+		PrintOptionsList();
+		WaitForKey();
 		return 1;
 	}
 
-	Sys_InitLog( "studiomdl.log" );
-	PrintTitle();
+	Sys_InitLog("pxstudiomdl.log");
+	PrintTitle(false);
 
-	for( i = 1; i < argc - 1; i++ )
+	for (i = 1; i < argc - 1; i++)
 	{
-		if( argv[i][0] == '-' )
+		if (argv[i][0] == '-')
 		{
-			if( !Q_stricmp( argv[i], "-dev" ))
+			if (!Q_stricmp(argv[i], "-dev"))
 			{
-				SetDeveloperLevel( verify_atoi( argv[i+1] ));
 				i++;
-				continue;
+				SetDeveloperLevel(verify_atoi(argv[i]));
 			}
-			switch( argv[i][1] )
+			else if (!Q_stricmp(argv[i], "-t"))
 			{
-			case 't':
 				i++;
-				Q_strncpy( defaulttexture[numrep], argv[i], sizeof( defaulttexture[0] ));
-				if( i < argc - 2 && argv[i + 1][0] != '-' )
+				Q_strncpy(defaulttexture[numrep], argv[i], sizeof(defaulttexture[0]));
+				if (i < argc - 2 && argv[i + 1][0] != '-')
 				{
 					i++;
-					Q_strncpy( sourcetexture[numrep], argv[i], sizeof( sourcetexture[0] ));
-					MsgDev( D_INFO, "Replacing %s with %s\n", sourcetexture[numrep], sizeof( defaulttexture[0] ));
+					Q_strncpy(sourcetexture[numrep], argv[i], sizeof(sourcetexture[0]));
+					MsgDev(D_INFO, "Replacing %s with %s\n", sourcetexture[numrep], sizeof(defaulttexture[0]));
 				}
-				MsgDev( D_INFO, "Using default texture: %s\n", defaulttexture );
+				MsgDev(D_INFO, "Using default texture: %s\n", defaulttexture);
 				numrep++;
-				break;
-			case 'r':
+			}
+			else if (!Q_stricmp(argv[i], "-r"))
+			{
 				tag_reversed = 1;
-				break;
-			case 'n':
+			}
+			else if (!Q_stricmp(argv[i], "-n"))
+			{
 				tag_normals = 1;
-				break;
-			case 'f':
+			}
+			else if (!Q_stricmp(argv[i], "-f"))
+			{
 				flip_triangles = 0;
-				break;
-			case 'a':
+			}
+			else if (!Q_stricmp(argv[i], "-a"))
+			{
 				i++;
-				g_normal_blend = cos( DEG2RAD( verify_atof( argv[i] )));
-				break;
-			case 'h':
+				g_normal_blend = cos(DEG2RAD(verify_atof(argv[i])));
+			}
+			else if (!Q_stricmp(argv[i], "-h"))
+			{
 				g_dump_hboxes = true;
-				break;
-			case 'g':
+			}
+			else if (!Q_stricmp(argv[i], "-g"))
+			{
 				g_dump_graph = true;
-				break;
+			}
+			else if (!Q_stricmp(argv[i], "-ath"))
+			{
+				i++;
+				g_alpha_threshold = bound(0.0f, verify_atof(argv[i]), 1.0f);
 			}
 		}
-	}	
+	}
 
 	if( !argv[i] )
 	{

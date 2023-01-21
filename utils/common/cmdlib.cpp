@@ -115,12 +115,12 @@ bool COM_GetLastParmExt( char *out, size_t size )
 
 /*
 ============
-COM_Error
+COM_FatalError
 
 Stop the app with error
 ============
 */
-void COM_FatalError( const char *error, ... )
+NO_RETURN void COM_FatalError( const char *error, ... )
 {
 	char	message[8192];
 	va_list	argptr;
@@ -140,7 +140,7 @@ COM_Assert
 assertation
 ============
 */
-void COM_Assert( const char *error, ... )
+NO_RETURN void COM_Assert( const char *error, ... )
 {
 	char	message[8192];
 	va_list	argptr;
@@ -202,6 +202,31 @@ void COM_FixSlashes( char *pname )
 }
 
 /*
+============
+COM_FindLastSlashEntry
+
+============
+*/
+const char *COM_FindLastSlashEntry(const char *text)
+{
+	size_t length = strlen(text);
+	size_t i = length - 1;
+	while (length > 0)
+	{
+		if (text[i] == '\\' || text[i] == '/') {
+			return text + i;
+		}
+		if (i == 0) {
+			break;
+		}
+		else {
+			i--;
+		}
+	}
+	return nullptr;
+}
+
+/*
 =============
 COM_CheckString
 
@@ -253,6 +278,27 @@ double GAME_EXPORT I_FloatTime( void )
 	return (double) ts.tv_sec + (double) ts.tv_nsec/1000000000.0;
 #else
 #error "Implement me!"
+#endif
+}
+
+void COM_SetClipboardText(const char *text)
+{
+#if XASH_WIN32
+	size_t length = Q_strlen(text);
+	LPTSTR clipboardString = nullptr;
+	HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, length + 1);
+
+	clipboardString = reinterpret_cast<LPTSTR>(GlobalLock(hMem));
+	memcpy(clipboardString, text, length);
+	clipboardString[length] = '\0';
+	GlobalUnlock(hMem);
+
+	OpenClipboard(NULL);
+	EmptyClipboard();
+	SetClipboardData(CF_TEXT, hMem);
+	CloseClipboard();
+#else
+	// TODO implement this for other platforms
 #endif
 }
 

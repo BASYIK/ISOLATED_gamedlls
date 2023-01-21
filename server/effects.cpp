@@ -2733,6 +2733,9 @@ void CFade::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType
 	SUB_UseTargets( this, USE_TOGGLE, 0 );
 }
 
+#define SF_POSTFX_CONTROLLER_OUT		0x0001		// Fade out
+#define SF_POSTFX_CONTROLLER_ONLYONE	0x0002      // Setting applies only for activator, not for all players
+
 class CEnvPostFxController : public CPointEntity
 {
 	DECLARE_CLASS( CEnvPostFxController, CPointEntity );
@@ -2742,6 +2745,8 @@ public:
 	void	KeyValue(KeyValueData *pkvd);
 
 private:
+	DECLARE_DATADESC();
+
 	float	m_flFadeInTime;
 	float	m_flBrightness;
 	float	m_flSaturation;
@@ -2754,10 +2759,22 @@ private:
 	float	m_flColorAccentScale;
 	Vector	m_vecAccentColor;
 };
+
 LINK_ENTITY_TO_CLASS( env_postfx_controller, CEnvPostFxController );
 
-#define SF_POSTFX_CONTROLLER_OUT		0x0001		// Fade out
-#define SF_POSTFX_CONTROLLER_ONLYONE	0x0002      // Setting applies only for activator, not for all players
+BEGIN_DATADESC( CEnvPostFxController )
+	DEFINE_FIELD( m_flFadeInTime, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flBrightness, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flSaturation, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flContrast, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flRedLevel, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flGreenLevel, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flBlueLevel, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flVignetteScale, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flFilmGrainScale, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flColorAccentScale, FIELD_FLOAT ),
+	DEFINE_FIELD( m_vecAccentColor, FIELD_VECTOR ),
+END_DATADESC()
 
 void CEnvPostFxController::Spawn()
 {

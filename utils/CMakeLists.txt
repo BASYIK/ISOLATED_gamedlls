@@ -12,17 +12,20 @@ set(DIR_UTILS_OUTPUT
 	${CMAKE_BINARY_DIR}/$<CONFIG>/${GAMEDIR}/devkit/
 )
 
-# link mimalloc library
+# add dependency libraries subprojects
+add_subdirectory("common/imagelib" imagelib)
+add_subdirectory("${CMAKE_SOURCE_DIR}/external/squish" squish)
 add_subdirectory("${CMAKE_SOURCE_DIR}/external/mimalloc" mimalloc EXCLUDE_FROM_ALL)
 set_compiler_runtime(mimalloc-static STATIC)
 
-# link mxtk library (used by pxmv and pxsv)
+# add mxtk library subproject (used by pxmv and pxsv)
 if(BUILD_PXMV OR BUILD_PXSV)
 	add_subdirectory("${CMAKE_SOURCE_DIR}/external/mxtk" mxtk)
 	set_compiler_runtime(mxtk STATIC)
 endif()
 
 add_subdirectory(pxstudiomdl)
+add_subdirectory(pxmakewad)
 add_subdirectory(pxbsp)
 add_subdirectory(pxcsg)
 add_subdirectory(pxrad)
@@ -31,17 +34,12 @@ add_subdirectory(pxvis)
 # append all targets to list
 list(APPEND UTILS_TARGETS
 	pxstudiomdl
+	pxmakewad
 	pxbsp
 	pxcsg
 	pxrad
 	pxvis
 )
-
-if(XASH_WIN32)
-	# for now, enable it only for Windows, because it contains a lot of platform-specific code
-	add_subdirectory(pxmakewad)
-	list(APPEND UTILS_TARGETS pxmakewad)
-endif()
 
 if(BUILD_PXMV)
 	add_subdirectory(pxmv)

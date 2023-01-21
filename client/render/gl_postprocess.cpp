@@ -813,7 +813,7 @@ void RenderBloom()
 
 	GL_DEBUG_SCOPE();
 	GL_BindShader(&glsl_programs[post.blurMipShader]);
-	GL_Bind(GL_TEXTURE0, tr.screen_temp_fbo->colortarget[0]);
+	GL_Bind(GL_TEXTURE0, tr.screen_hdr_fbo->colortarget[0]);
 	GL_Setup2D();
 
 	int w = glState.width;
@@ -850,7 +850,7 @@ void RenderBloom()
 			}
 		}
 
-		pglBindFramebuffer(GL_FRAMEBUFFER_EXT, tr.screen_temp_fbo_mip[i]);
+		pglBindFramebuffer(GL_FRAMEBUFFER_EXT, tr.screen_hdr_fbo_mip[i]);
 		RenderFSQ(glState.width, glState.height);
 	}
 
@@ -858,7 +858,7 @@ void RenderBloom()
 	h = glState.height / 2;
 
 	pglViewport(0, 0, w, h);
-	pglBindFramebuffer(GL_FRAMEBUFFER_EXT, tr.screen_temp_fbo_mip[0]);
+	pglBindFramebuffer(GL_FRAMEBUFFER_EXT, tr.screen_hdr_fbo_mip[0]);
 	GL_BindShader(&glsl_programs[post.bloomShader]);
 
 	shader = RI->currentshader;

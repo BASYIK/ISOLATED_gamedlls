@@ -1,6 +1,6 @@
 /*
-wfile.h - simple version of game engine filesystem for tools
-Copyright (C) 2018 Uncle Mike
+status_code.h - status codes for input image files processing errors
+Copyright (C) 2023 SNMetamorph
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -13,23 +13,15 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef WFILE_H
-#define WFILE_H
+#pragma once
 
-// wad intermediate struct
-struct wfile_s
+enum class FileStatusCode
 {
-	char		filename[256];
-	int		infotableofs;
-	int		numlumps;
-	int		mode;
-#ifdef ALLOW_WADS_IN_PACKS
-	file_t		*handle;
-#else
-	int		handle;
-#endif
-	time_t		filetime;	
-	dlumpinfo_t	*lumps;
+	Success,
+	ErrorSilent,
+	InvalidImageHint,
+	NameTooLong,
+	NoMatchedInputFiles,
+	UnknownLumpFormat,
+	UnknownError
 };
-
-#endif

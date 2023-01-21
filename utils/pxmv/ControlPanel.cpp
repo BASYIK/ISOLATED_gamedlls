@@ -117,28 +117,33 @@ ControlPanel :: ControlPanel( mxWindow *parent ) : mxWindow( parent, 0, 0, 0, 0,
 	cbAntiAliasLines = new mxCheckBox (wTexture, 400, 43, 100, 22, "Anti-Alias Lines", IDC_ANTI_ALIAS_LINES);
 	leTextureName = new mxLineEdit( wTexture, 400, 66, 100, 18, "", IDC_EDIT_TEXTURE_NAME ); 
 
-	mxToolTip::add (new mxSlider (wTexture, 0, 60, 160, 18, IDC_TEXTURESCALE), "Scale texture size");
-	lTexScale = new mxLabel (wTexture, 5, 47, 140, 14, "Scale Texture View (1x)");
+	slTexScale = new mxSlider(wTexture, 0, 60, 160, 18, IDC_TEXTURESCALE);
+	mxToolTip::add(slTexScale, "Scale texture size");
+	lTexScale = new mxLabel(wTexture, 5, 47, 140, 14, "Scale Texture View (1.00x)");
+	slTexScale->setRange(-100, 100);
+	slTexScale->setValue(0);
 
 	mxWindow *wSequence = new mxWindow (this, 0, 0, 0, 0);
 	tab->add (wSequence, "Sequences");
 
-	mxLabel *AnimSequence = new mxLabel (wSequence, 5, 3, 120, 18, "Animation Sequence");
-	cSequence = new mxChoice (wSequence, 5, 18, 200, 22, IDC_SEQUENCE);	
-	mxToolTip::add (cSequence, "Select Sequence");
-	tbStop = new mxButton (wSequence, 5, 46, 60, 18, "Stop", IDC_STOP);
-	mxToolTip::add (tbStop, "Stop Playing");
-	bPrevFrame = new mxButton (wSequence, 84, 46, 30, 18, "<<", IDC_PREVFRAME);
-	bPrevFrame->setEnabled (false);
-	mxToolTip::add (bPrevFrame, "Prev Frame");
-	leFrame = new mxLineEdit (wSequence, 119, 46, 50, 18, "", IDC_FRAME); 
-	leFrame->setEnabled (false);
-	mxToolTip::add (leFrame, "Set Frame");
-	bNextFrame = new mxButton (wSequence, 174, 46, 30, 18, ">>", IDC_NEXTFRAME);
-	bNextFrame->setEnabled (false);
-	mxToolTip::add (bNextFrame, "Next Frame");	
+	mxLabel *AnimSequence = new mxLabel(wSequence, 5, 3, 120, 18, "Animation Sequence");
+	cSequence = new mxChoice(wSequence, 5, 18, 200, 22, IDC_SEQUENCE);
+	mxToolTip::add(cSequence, "Select Sequence");
+	tbStop = new mxButton(wSequence, 5, 46, 60, 18, "Stop", IDC_STOP);
+	mxToolTip::add(tbStop, "Stop Playing");
+	bPrevFrame = new mxButton(wSequence, 84, 46, 30, 18, "<<", IDC_PREVFRAME);
+	bPrevFrame->setEnabled(false);
+	mxToolTip::add(bPrevFrame, "Prev Frame");
+	leFrame = new mxLineEdit(wSequence, 119, 46, 50, 18, "", IDC_FRAME);
+	leFrame->setEnabled(false);
+	mxToolTip::add(leFrame, "Set Frame");
+	bNextFrame = new mxButton(wSequence, 174, 46, 30, 18, ">>", IDC_NEXTFRAME);
+	bNextFrame->setEnabled(false);
+	mxToolTip::add(bNextFrame, "Next Frame");
+	bCopySequenceName = new mxButton(wSequence, 210, 18, 65, 22, "Copy name", IDC_COPYSEQUENCENAME);
+	mxToolTip::add(bCopySequenceName, "Copy current animation sequence name");
 
-	lSequenceInfo = new mxLabel (wSequence, 228, 12, 90, 100, "");
+	lSequenceInfo = new mxLabel (wSequence, 288, 12, 90, 100, "");
 
 	mxLabel *SpdLabel = new mxLabel (wSequence, 170, 70, 35, 18, "Speed");
 	slSpeedScale = new mxSlider (wSequence, 0, 70, 165, 18, IDC_SPEEDSCALE);
@@ -146,9 +151,9 @@ ControlPanel :: ControlPanel( mxWindow *parent ) : mxWindow( parent, 0, 0, 0, 0,
 	slSpeedScale->setValue (40);
 	mxToolTip::add (slSpeedScale, "Speed Scale");
 
-	slBlender0 = new mxSlider( wSequence, 320, 12, 145, 18, IDC_BLENDER0 );
-	slBlender1 = new mxSlider( wSequence, 320, 35, 145, 18, IDC_BLENDER1 );
-	cbLoopAnim = new mxCheckBox( wSequence, 325, 60, 90, 22, "Loop Animation", IDC_LOOPANIM );
+	slBlender0 = new mxSlider( wSequence, 380, 12, 145, 18, IDC_BLENDER0 );
+	slBlender1 = new mxSlider( wSequence, 380, 35, 145, 18, IDC_BLENDER1 );
+	cbLoopAnim = new mxCheckBox( wSequence, 385, 60, 90, 22, "Loop Animation", IDC_LOOPANIM );
 	new mxLabel( wSequence, 467, 12, 55, 18, "Blender 0" );
 	new mxLabel( wSequence, 467, 35, 55, 18, "Blender 1" );
 	slBlender0->setRange( 0, 255 );
@@ -460,6 +465,31 @@ ControlPanel::handleEvent (mxEvent *event)
 			g_nCurrFrame = g_studioModel.SetFrame (g_nCurrFrame + 1);
 			leFrame->setLabel (va("%d", g_nCurrFrame));
 			g_bEndOfSequence = false;
+		}
+		break;
+
+		case IDC_COPYSEQUENCENAME:
+		{
+			if (cSequence->getItemCount() > 0)
+			{
+				int index = cSequence->getSelectedIndex();
+				studiohdr_t *hdr = g_studioModel.getStudioHeader();
+				if (hdr)
+				{
+					mstudioseqdesc_t *pseqdescs = (mstudioseqdesc_t *)((byte *)hdr + hdr->seqindex);
+					for (int i = 0, k = -1; i < hdr->numseq; i++)
+					{
+						if (!FBitSet(pseqdescs[i].flags, STUDIO_HIDDEN | STUDIO_AUTOPLAY)) {
+							k++;
+						}
+						if (index == k)
+						{
+							COM_SetClipboardText(pseqdescs[i].label);
+							break;
+						}
+					}
+				}
+			}
 		}
 		break;
 
@@ -816,8 +846,13 @@ ControlPanel::handleEvent (mxEvent *event)
 
 		case IDC_TEXTURESCALE:
 		{
-			g_viewerSettings.textureScale =  1.0f + (float) ((mxSlider *) event->widget)->getValue () * 4.0f / 100.0f;
-			lTexScale->setLabel( va("Scale Texture View (%.fx)", g_viewerSettings.textureScale) );
+			float sliderFraction = ((mxSlider *)event->widget)->getValue() / 100.0f * 4.0f;
+			if (sliderFraction >= 0.0f)
+				g_viewerSettings.textureScale = sliderFraction + 1.0f;
+			else
+				g_viewerSettings.textureScale = 1.0f / (1.0f - sliderFraction);
+
+			lTexScale->setLabel( va("Scale Texture View (%.2fx)", g_viewerSettings.textureScale) );
 			d_GlWindow->redraw ();
 		}
 		break;

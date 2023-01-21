@@ -14,14 +14,19 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#include <stdio.h>
-#include <time.h>
-#include <stdarg.h>
 #include "port.h"
 #include "basetypes.h"
 #include "stringlib.h"
 #include "conprint.h"
 #include "mathlib.h"
+#include <stdio.h>
+#include <time.h>
+#include <stdarg.h>
+
+#if XASH_POSIX
+#include <termios.h>
+#include <unistd.h>
+#endif
 
 #if XASH_ANDROID
 #include <android/log.h>
@@ -93,67 +98,68 @@ void Sys_CloseLog( void )
 	logfile = NULL;
 }
 
-void Sys_PrintLog( const char *pMsg )
+void Sys_PrintLog(const char *pMsg)
 {
-	if( !pMsg || ignore_log )
+	if (!pMsg || ignore_log)
 		return;
 
 	time_t crt_time;
 	const struct tm	*crt_tm;
-	char logtime[32] = "";
 	static char lastchar;
 
-	time( &crt_time );
-	crt_tm = localtime( &crt_time );
+	time(&crt_time);
+	crt_tm = localtime(&crt_time);
 
 #if XASH_ANDROID
-	__android_log_print( ANDROID_LOG_DEBUG, "Xash", "%s", pMsg );
+	__android_log_print(ANDROID_LOG_DEBUG, "PrimeXT", "%s", pMsg);
 #endif
 
-	if( !logfile )
+	if (!logfile)
 		return;
 
-	if( !lastchar || lastchar == '\n')
-		strftime( logtime, sizeof( logtime ), "[%Y:%m:%d|%H:%M:%S]", crt_tm ); // full time
+	if (!lastchar || lastchar == '\n')
+	{
+		char logtime[32] = "";
+		strftime(logtime, sizeof(logtime), "[%Y:%m:%d|%H:%M:%S]", crt_tm); // full time
+		fprintf(logfile, "%s %s", logtime, pMsg);
+	}
+	else {
+		fprintf(logfile, "%s", pMsg);
+	}
 
-	fprintf( logfile, "%s %s", logtime, pMsg );
-	fflush( logfile );
+	fflush(logfile);
 	lastchar = pMsg[strlen(pMsg) - 1];
 }
 
-/*
-================
-Sys_Print
-
-print into win32 console
-================
-*/
-void Sys_Print( const char *pMsg )
-{
 #if XASH_WIN32
+static void Sys_PrintWin32(const char *pMsg)
+{
 	char tmpBuf[8192];
-	HANDLE hOut = GetStdHandle( STD_OUTPUT_HANDLE );
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD cbWritten;
 	char *pTemp = tmpBuf;
 
-	while( pMsg && *pMsg )
+	// always initially reset color to white
+	SetConsoleTextAttribute(hOut, g_color_table[7]); 
+
+	while (pMsg && *pMsg)
 	{
-		if( IsColorString( pMsg ))
+		if (IsColorString(pMsg))
 		{
-			if(( pTemp - tmpBuf ) > 0 )
+			if ((pTemp - tmpBuf) > 0)
 			{
 				// dump accumulated text before change color
 				*pTemp = 0; // terminate string
-				WriteFile( hOut, tmpBuf, static_cast<DWORD>(strlen(tmpBuf)), &cbWritten, 0 );
-				Sys_PrintLog( tmpBuf );
+				WriteFile(hOut, tmpBuf, static_cast<DWORD>(strlen(tmpBuf)), &cbWritten, 0);
+				Sys_PrintLog(tmpBuf);
 				pTemp = tmpBuf;
 			}
 
 			// set new color
-			SetConsoleTextAttribute( hOut, g_color_table[ColorIndex( *(pMsg + 1))] );
+			SetConsoleTextAttribute(hOut, g_color_table[ColorIndex(*(pMsg + 1))]);
 			pMsg += 2; // skip color info
 		}
-		else if(( pTemp - tmpBuf ) < sizeof( tmpBuf ) - 1 )
+		else if ((pTemp - tmpBuf) < sizeof(tmpBuf) - 1)
 		{
 			*pTemp++ = *pMsg++;
 		}
@@ -161,34 +167,28 @@ void Sys_Print( const char *pMsg )
 		{
 			// temp buffer is full, dump it now
 			*pTemp = 0; // terminate string
-			WriteFile( hOut, tmpBuf, static_cast<DWORD>(strlen(tmpBuf)), &cbWritten, 0 );
-			Sys_PrintLog( tmpBuf );
+			WriteFile(hOut, tmpBuf, static_cast<DWORD>(strlen(tmpBuf)), &cbWritten, 0);
+			Sys_PrintLog(tmpBuf);
 			pTemp = tmpBuf;
 		}
 	}
 
 	// check for last portion
-	if(( pTemp - tmpBuf ) > 0 )
+	if ((pTemp - tmpBuf) > 0)
 	{
 		// dump accumulated text
 		*pTemp = 0; // terminate string
-		WriteFile( hOut, tmpBuf, static_cast<DWORD>(strlen(tmpBuf)), &cbWritten, 0 );
-		Sys_PrintLog( tmpBuf );
+		WriteFile(hOut, tmpBuf, static_cast<DWORD>(strlen(tmpBuf)), &cbWritten, 0);
+		Sys_PrintLog(tmpBuf);
 		pTemp = tmpBuf;
 	}
-#else
-	time_t crt_time;
-	const struct tm *crt_tm;
-	char logtime[32] = "";
-	static char lastchar;
+}
+#endif
 
-	time(&crt_time);
-	crt_tm = localtime(&crt_time);
-
+#if !XASH_WIN32
+static void Sys_PrintPosix(const char *pMsg)
+{
 #ifdef COLORIZE_CONSOLE
-	if (!lastchar || lastchar == '\n')
-		strftime(logtime, sizeof(logtime), "[%H:%M:%S] ", crt_tm); // short time
-
 	char colored[4096];
 	const char *msg = pMsg;
 	int len = 0;
@@ -227,15 +227,30 @@ void Sys_Print( const char *pMsg )
 	}
 
 	colored[len] = 0;
-	printf("\033[34m%s\033[0m%s\033[0m", logtime, colored);
-	lastchar = pMsg[strlen(pMsg) - 1];
+	printf("%s\033[0m", colored);
 
 #elif !XASH_ANDROID
-	printf("%s %s", logtime, pMsg);
+	printf("%s", pMsg);
 	fflush(stdout);
 #endif
 
-	Sys_PrintLog( pMsg );
+	Sys_PrintLog(pMsg);
+}
+#endif
+
+/*
+================
+Sys_Print
+
+print into win32 console
+================
+*/
+void Sys_Print( const char *pMsg )
+{
+#if XASH_WIN32
+	Sys_PrintWin32(pMsg);
+#else
+	Sys_PrintPosix(pMsg);
 #endif
 }
 
@@ -298,39 +313,34 @@ void MsgAnim( int level, const char *pMsg, ... )
 	int j;
 	va_list	argptr;
 	char	text[1024];
-	
-	if( devloper_level < level ) 
+	char	empty[1024];
+
+	if (devloper_level < level)
 		return;
 
-	va_start( argptr, pMsg );
-	Q_vsnprintf( text, sizeof( text ), pMsg, argptr );
-	va_end( argptr );
-
-#if XASH_POSIX
-	Sys_Print("\033[5m");
-	Sys_Print(text);
-	Sys_Print( "^7\n" );
-#elif XASH_WIN32
-	char	empty[1024];
+	va_start(argptr, pMsg);
+	Q_vsnprintf(text, sizeof(text), pMsg, argptr);
+	va_end(argptr);
 
 	// fill clear string
 	for (j = 0; j < Q_strlen(text); j++) {
 		empty[j] = ' ';
-	}
+}
 	empty[j] = '\r';
-	empty[j+1] = '\0';
+	empty[j + 1] = '\0';
 
 	// do animation
-	for( int i = 0; i < 8; i++ )
+	for (int i = 0; i < 8; i++)
 	{
-		Sys_IgnoreLog( i < 7 );
-		if( i & 1 ) Sys_Print( text );
-		else Sys_Print( empty );
-		Sleep( 150 );
+		Sys_IgnoreLog(i < 7);
+		if (i & 1) {
+			Sys_Print(text);
+		}
+		else {
+			Sys_Print(empty);
+		}
+		Sys_Sleep(150);
 	}
-#else
-#error "Implement me!"
-#endif
 }
 
 /*
@@ -352,5 +362,26 @@ void Sys_Sleep( unsigned int msec )
         usleep( msec * 1000 );
 #else
 #error "Implement me!"
+#endif
+}
+
+void Sys_WaitForKeyInput()
+{
+#if XASH_WIN32
+	system("pause>nul");
+#else
+	struct termios term;
+	char buf;
+	tcflag_t old_lflag;
+
+	tcgetattr (0, &term);
+	old_lflag = term.c_lflag;
+	term.c_lflag &= ~(ECHO | ICANON);	
+	tcsetattr (0, TCSANOW, &term);		
+	while (read (0, &buf, 1)) {
+		break;
+	}
+	term.c_lflag = old_lflag;
+	tcsetattr (0, TCSANOW, &term);
 #endif
 }

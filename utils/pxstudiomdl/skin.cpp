@@ -20,14 +20,15 @@ GNU General Public License for more details.
 #include "filesystem.h"
 #include "studio.h"
 #include "studiomdl.h"
-#include "imagelib.h"
+#include "image_utils.h"
 #include "builtin.h"
 
 void Grab_Skin( s_texture_t *ptexture )
 {
-	bool	use_default = false;
-	char	file1[1024];
-	rgbdata_t	*pic;
+	bool use_default = false;
+	char file1[1024];
+	rgbdata_t *pic = nullptr;
+	rgbdata_t *alphaMask = nullptr;
 
 	// g-cont. moved here to avoid some bugs
 	if( store_uv_coords && !FBitSet( ptexture->flags, STUDIO_NF_CHROME ))
@@ -36,7 +37,7 @@ void Grab_Skin( s_texture_t *ptexture )
 	// use internal image
 	if( !Q_stricmp( ptexture->name, "#white.bmp" ))
 	{
-		pic = COM_LoadImageMemory( ptexture->name, white_bmp, sizeof( white_bmp ));
+		pic = ImageUtils::LoadImageMemory( ptexture->name, white_bmp, sizeof( white_bmp ));
 	}
 	else
 	{
@@ -61,25 +62,32 @@ void Grab_Skin( s_texture_t *ptexture )
 				use_default = true;
 		}
 
-		pic = COM_LoadImage( file1 );
+		pic = ImageUtils::LoadImageFile( file1 );
 		if( !pic ) MsgDev( D_ERROR, "unable to load %s\n", ptexture->name );
 	}	
 
 	// use emo-texture
-	if( !pic ) pic = COM_LoadImageMemory( "default.bmp", default_bmp, sizeof( default_bmp ));
+	if( !pic ) pic = ImageUtils::LoadImageMemory( "default.bmp", default_bmp, sizeof( default_bmp ));
 	if( !pic ) COM_FatalError( "%s not found", file1 ); // ???
 
-	int new_width = Q_min( pic->width, store_uv_coords ? MIP_MAXWIDTH : 512 );
-	int new_height = Q_min( pic->height, store_uv_coords ? MIP_MAXHEIGHT : 512 );
+	int new_width = Q_min(pic->width, store_uv_coords ? MIP_MAXWIDTH : 512);
+	int new_height = Q_min(pic->height, store_uv_coords ? MIP_MAXHEIGHT : 512);
+	bool transparent = FBitSet(ptexture->flags, STUDIO_NF_MASKED) && FBitSet(pic->flags, IMAGE_HAS_8BIT_ALPHA);
 
 	// resample to studio limits
-	pic = Image_Resample( pic, new_width, new_height );
-	pic = Image_Quantize( pic );	// quantize if needs
+	pic = Image_Resample(pic, new_width, new_height);
+	if (transparent) {
+		alphaMask = Image_ExtractAlphaMask(pic);
+	}
+	pic = Image_Quantize(pic); // quantize if needs
 
-	if( FBitSet( ptexture->flags, STUDIO_NF_MASKED ))
-		Image_MakeOneBitAlpha( pic );	// check alpha
+	if (transparent)
+	{
+		Image_ApplyAlphaMask(pic, alphaMask, g_alpha_threshold);
+		Image_Free(alphaMask);
+	}
 
-	Image_ApplyGamma( pic ); // process gamma
+	ImageUtils::ApplyPaletteGamma(pic); // process gamma
 	ptexture->srcwidth = pic->width;
 	ptexture->srcheight = pic->height;
 	ptexture->psrc = pic;
@@ -100,7 +108,7 @@ void ResizeTexture( s_texture_t *ptexture )
 
 	ptexture->size = ptexture->skinwidth * ptexture->skinheight + 256 * 3;
 
-	Msg( "BMP %s [%d %d] (%.0f%%)  %6d bytes\n", ptexture->name,  ptexture->skinwidth, ptexture->skinheight, 
+	Msg( "%s [%d %d] (%.0f%%)  %6d bytes\n", ptexture->name, ptexture->skinwidth, ptexture->skinheight, 
 		((ptexture->skinwidth * ptexture->skinheight) / (float)(ptexture->srcwidth * ptexture->srcheight)) * 100.0, ptexture->size );
 	
 	if( ptexture->size > 1024 * 1024 + 256 * 3 )
@@ -142,7 +150,7 @@ void ResizeTexture( s_texture_t *ptexture )
 		pdest[i*3+2] = ptexture->psrc->palette[i*4+2];
 	}
 
-	Mem_Free( ptexture->psrc );
+	Image_Free( ptexture->psrc );
 	ptexture->psrc = NULL;
 }
 
@@ -382,7 +390,7 @@ void ResetTextureCoordRanges( s_mesh_t *pmesh, s_texture_t *ptexture  )
 				pmesh->triangle[i][j].t = (ptexture->max_t + 1 - ptexture->min_t) - (pmesh->triangle[i][j].t - ptexture->min_t);
 			}
 			if (store_uv_coords) {
-				pmesh->triangle[i][j].v = -pmesh->triangle[i][j].v;
+				pmesh->triangle[i][j].v = 1.0f - pmesh->triangle[i][j].v;
 			}
 		}
 	}

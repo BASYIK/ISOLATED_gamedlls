@@ -11,8 +11,8 @@
 #define MAXSTUDIOMOVEKEYS		64
 #define MAXSTUDIOIKRULES		64
 #define MAXSTUDIOSRCBONES		512	// bones allowed at source movement
-#define MAXSTUDIOANIMATIONS		512	// max frames per sequence
-#define MAXSTUDIOANIMFRAMES		510	// max frames per sequence
+#define MAXSTUDIOANIMATIONS		16386	// max frames per sequence
+#define MAXSTUDIOANIMFRAMES		16386	// max frames per sequence
 #define MAXSTUDIOSEQUENCES		1024	// total animation sequences
 #define MAXSTUDIOEVENTS		64	// events per sequence
 #define MAXSTUDIOMESHES		256	// max textures per model
@@ -41,6 +41,7 @@ EXTERN	int	tag_reversed;
 EXTERN	int	tag_normals;
 EXTERN	bool	flip_triangles;
 EXTERN	float	g_normal_blend;
+EXTERN	float	g_alpha_threshold;
 EXTERN	bool	g_dump_hboxes;
 EXTERN	bool	g_dump_graph;
 EXTERN	Vector	eyeposition;

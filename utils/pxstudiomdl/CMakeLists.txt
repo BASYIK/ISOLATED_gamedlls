@@ -13,11 +13,12 @@ list(APPEND DIR_SOURCES
 	"../common/filesystem.cpp"
 	"../common/scriplib.cpp"
 	"../common/stringlib.cpp"
+	"../common/virtualfs.cpp"
 	"../common/zone.cpp"
+	"${CMAKE_SOURCE_DIR}/public/crclib.cpp"
 	"${CMAKE_SOURCE_DIR}/public/build_info.cpp"
-	"imagelib.cpp"
+	"image_utils.cpp"
 	"optimize.cpp"
-    "quantizer.cpp"
     "simpilfy.cpp"
     "skin.cpp"
     "studiomdl.cpp"
@@ -34,12 +35,13 @@ endif()
 add_executable(${PROJECT_NAME} ${DIR_SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"."
-	"../../game_shared" # should be first because mathlib.h also locates i
-	"../../engine"
-	"../../server"
-	"../../public"
-	"../../common"
+	"${CMAKE_SOURCE_DIR}/game_shared" # should be first because mathlib.h also locates i
+	"${CMAKE_SOURCE_DIR}/engine"
+	"${CMAKE_SOURCE_DIR}/server"
+	"${CMAKE_SOURCE_DIR}/public"
+	"${CMAKE_SOURCE_DIR}/common"
 	"../common"
+	"../common/imagelib"
 	"${CMAKE_SOURCE_DIR}/external/mimalloc/include"
 )
 
@@ -65,11 +67,15 @@ endif()
 if(MSVC)
 	# debug mode compiler flags
 	target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/Od>) # disable optimizing at all
-	target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/ZI>) # enable "Edit and Continue" MSVC feature
-	target_link_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:
-		/INCREMENTAL 
-		/SAFESEH:NO
-	>)
+	if(NOT ENABLE_ASAN)
+		target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/ZI>) # enable "Edit and Continue" MSVC feature
+		target_link_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:
+			/INCREMENTAL 
+			/SAFESEH:NO
+		>)
+	else()
+		target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/Zi>)
+	endif()
 
 	# release mode compiler flags
 	target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Release,RelWithDebInfo>:/O2>) # enable optimizing to maximize speed
@@ -81,8 +87,9 @@ if(ENABLE_STATIC_LINKING)
 	set_compiler_runtime(${PROJECT_NAME} STATIC)
 endif()
 
-# add mimalloc library depedency
+# link dependency libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE
+	imagelib
 	mimalloc-static
 )
 

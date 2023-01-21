@@ -1,7 +1,6 @@
 /*
-crashhandler.h - advanced crashhandler
-Copyright (C) 2016 Mittorn
-Copyright (C) 2022 SNMetamorph
+ddstex.h - image dds encoder. Use squish library
+Copyright (C) 2016 Uncle Mike
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -14,11 +13,12 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#pragma once
+#ifndef DDSTEX_H
+#define DDSTEX_H
 
-//
-// crashhandler.cpp
-//
-void Sys_SetupCrashHandler();
-void Sys_RestoreCrashHandler();
-void Sys_WaitForDebugger();
+rgbdata_t *DDSToBuffer( const char *name, const byte *buffer, size_t filesize );
+rgbdata_t *DDSToRGBA( const char *name, const byte *buffer, size_t filesize );
+rgbdata_t *BufferToDDS( rgbdata_t *pix, int saveformat );
+int DDS_GetSaveFormatForHint( int hint, rgbdata_t *pix );
+
+#endif//DDSTEX_H

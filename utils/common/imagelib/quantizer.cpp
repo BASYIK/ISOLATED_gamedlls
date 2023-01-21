@@ -1,6 +1,7 @@
 /*
 quantizer.cpp - image quantizer. based on Antony Dekker original code
 Copyright (C) 2015 Uncle Mike
+Copyright (C) 2022 SNMetamorph
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,9 +17,6 @@ GNU General Public License for more details.
 #include "port.h"
 #include "cmdlib.h"
 #include "mathlib.h"
-#include "stringlib.h"
-#include "scriplib.h"
-#include "filesystem.h"
 #include "imagelib.h"
 
 #define netsize		256			// number of colours used
@@ -411,7 +409,7 @@ void learn( void )
 		if( rad ) alterneigh( rad, j, r, g, b );   // alter neighbours
 
 		p += step;
-		if( p >= lim ) p -= lengthcount;
+		while( p >= lim ) p -= lengthcount;
 	
 		i++;
 
@@ -462,7 +460,7 @@ rgbdata_t *Image_Quantize( rgbdata_t *pic )
 
 	for( i = 0; i < pic->width * pic->height; i++ )
 		out->buffer[i] = inxsearch( pic->buffer[i*4+0], pic->buffer[i*4+1], pic->buffer[i*4+2] );
-	Mem_Free( pic ); // release RGBA image
 
+	Image_Free( pic ); // release RGBA image
 	return out;
 }

@@ -1,6 +1,7 @@
 /*
-ddstex.h - image dds encoder. Use squish library
-Copyright (C) 2016 Uncle Mike
+image_utils.h - utility routines for working with images
+Copyright (C) 2015 Uncle Mike
+Copyright (C) 2022 SNMetamorph
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -13,12 +14,18 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef DDSTEX_H
-#define DDSTEX_H
+#ifndef IMAGE_UTILS_H
+#define IMAGE_UTILS_H
+#include "imagelib.h"
+#include <stdint.h>
 
-rgbdata_t *DDSToBuffer( const char *name, const byte *buffer, size_t filesize );
-rgbdata_t *DDSToRGBA( const char *name, const byte *buffer, size_t filesize );
-rgbdata_t *BufferToDDS( rgbdata_t *pix, int saveformat );
-int DDS_GetSaveFormatForHint( char hint, rgbdata_t *pix );
+namespace ImageUtils
+{
+	rgbdata_t *LoadImageFile(const char *filename);
+	rgbdata_t *LoadImageMemory(const char *filename, const byte *buf, size_t fileSize);
+	void ApplyPaletteGamma(rgbdata_t *pic);
+};
 
-#endif//DDSTEX_H
+extern float	g_gamma;
+
+#endif // IMAGE_UTILS_H
