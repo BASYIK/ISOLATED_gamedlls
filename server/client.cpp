@@ -575,6 +575,22 @@ void ServerDeactivate( void )
 		return;
 	}
 
+	g_clearInventoriesNextMap = false;
+
+	for (int i = 1; i <= gpGlobals->maxClients; i++) {
+		CBasePlayer* plr = (CBasePlayer*)UTIL_PlayerByIndex(i);
+		if (!plr) {
+			continue;
+		}
+
+		plr->SaveScore();
+
+		if (!g_clearInventoriesNextMap) {
+			plr->SaveInventory();
+		}
+	}
+
+
 	g_serveractive = 0;
 
 	// Peform any shutdown operations here...
@@ -591,6 +607,12 @@ void ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 	CBaseEntity		*pClass;
 
 //	ALERT( at_console, "ServerActivate()\n" );
+
+	// reset player inventories
+	if (g_clearInventoriesNextMap) {
+		g_playerInventory.clear();
+	}
+	g_clearInventoriesNextMap = true; // set to false by trigger_changelevel
 
 	// Every call to ServerActivate should be matched by a call to ServerDeactivate
 	g_serveractive = 1;

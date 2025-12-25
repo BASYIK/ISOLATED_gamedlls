@@ -4954,6 +4954,47 @@ BOOL CBasePlayer::HasPlayerItem( CBasePlayerItem *pCheckItem )
 	return FALSE;
 }
 
+CBasePlayerItem* CBasePlayer::GetNamedPlayerItem(const char* pszItemName) {
+	CBasePlayerItem* pItem;
+	int i;
+
+	if (!pszItemName)
+		return NULL;
+
+	for (i = 0; i < MAX_ITEM_TYPES; i++)
+	{
+		pItem = (CBasePlayerItem*)m_rgpPlayerItems[i].GetPointer();
+
+		while (pItem)
+		{
+			if (!strcmp(pszItemName, STRING(pItem->pev->classname)))
+			{
+				return pItem;
+			}
+			pItem = (CBasePlayerItem*)pItem->m_pNext.GetPointer();
+		}
+	}
+
+	return NULL;
+}
+
+CBasePlayerItem* CBasePlayer::GetPlayerItemById(int id) {
+	for (int i = 0; i < MAX_ITEM_TYPES; i++) {
+		CBasePlayerItem* pItem = (CBasePlayerItem*)m_rgpPlayerItems[i].GetPointer();
+
+		while (pItem) {
+			CBasePlayerWeapon* wep = pItem->GetWeaponPtr();
+
+			if (wep && wep->m_pWeaponContext->m_iId == id) {
+				return pItem;
+			}
+
+			pItem = (CBasePlayerItem*)pItem->m_pNext.GetPointer();
+		}
+	}
+
+	return NULL;
+}
 //=========================================================
 // HasNamedPlayerItem Does the player already have this item?
 //=========================================================
@@ -5387,3 +5428,108 @@ void CHudSprite :: Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 		WRITE_BYTE( pev->rendercolor.z );
 	MESSAGE_END();
 }
+
+const char* CBasePlayer::GetPlayerID() {
+	return g_engfuncs.pfnGetPlayerAuthId(edict());
+}
+int CBasePlayer::GetUserID() {
+	return  g_engfuncs.pfnGetPlayerUserId(edict());
+}
+
+void CBasePlayer::SaveScore() {
+	player_score_t score;
+	score.frags = pev->frags;
+	score.deaths = m_iDeaths;
+	g_playerScores[GetPlayerID()] = score;
+}
+
+void CBasePlayer::LoadScore() {
+	auto previousScore = g_playerScores.find(GetPlayerID());
+	if (previousScore != g_playerScores.end()) {
+		player_score_t score = previousScore->second;
+		pev->frags = score.frags;
+		m_iDeaths = score.deaths;
+	}
+	else {
+		pev->frags = 0;
+		m_iDeaths = 0;
+	}
+}
+
+void CBasePlayer::SaveInventory() {
+	player_inventory_t inv;
+
+	for (int i = 0; i < MAX_ITEM_TYPES; i++) {
+		if (m_rgpPlayerItems[i]) {
+			CBaseEntity* ent = m_rgpPlayerItems[i].GetPointer();
+			CBasePlayerWeapon* wep = ent ? ent->GetWeaponPtr() : NULL;
+
+			while (wep) {
+				inv.weapons.put(STRING(wep->pev->classname));
+				inv.weaponClips[wep->m_pWeaponContext->m_iId] = wep->m_pWeaponContext->m_iClip;
+				CBaseEntity* next = wep->m_pNext.GetPointer();
+				wep = next ? next->GetWeaponPtr() : NULL;
+			}
+		}
+	}
+
+	CBaseEntity* activeItem = m_pActiveItem.GetPointer();
+	CBasePlayerWeapon* activeWep = activeItem ? activeItem->GetWeaponPtr() : NULL;
+
+	inv.health = pev->health;
+	inv.armor = pev->armorvalue;
+	inv.hasLongjump = m_fLongJump;
+	inv.flashlightBattery = m_iFlashBattery;
+	inv.activeWeaponId = activeWep ? activeWep->m_pWeaponContext->m_iId : NULL;
+
+	memcpy(inv.m_rgAmmo, m_rgAmmo, MAX_AMMO_SLOTS * sizeof(int));
+
+	g_playerInventory[GetPlayerID()] = inv;
+}
+
+bool CBasePlayer::LoadInventory() {
+	auto previousInv = g_playerInventory.find(GetPlayerID());
+	if (previousInv != g_playerInventory.end()) {
+		player_inventory_t inv = previousInv->second;
+
+		StringSet::iterator_t iter;
+		while (inv.weapons.iterate(iter)) {
+			if (!HasNamedPlayerItem(iter.key)) {
+				const char* itemName = STRING(ALLOC_STRING(iter.key));
+				GiveNamedItem(itemName);
+				CBasePlayerItem* item = GetNamedPlayerItem(itemName);
+				CBasePlayerWeapon* wep = item ? item->GetWeaponPtr() : NULL;
+				if (wep) {
+					wep->m_pWeaponContext->m_iClip = inv.weaponClips[wep->m_pWeaponContext->m_iId];
+				}
+			}
+		}
+
+		for (int i = 0; i < MAX_AMMO_SLOTS; i++) {
+			m_rgAmmo[i] = fmax(m_rgAmmo[i], inv.m_rgAmmo[i]);
+		}
+
+		CBasePlayerItem* item = GetPlayerItemById(inv.activeWeaponId);
+		if (item)
+			SwitchWeapon(item);
+
+		if (inv.hasLongjump) {
+			m_fLongJump = TRUE;
+			g_engfuncs.pfnSetPhysicsKeyValue(edict(), "slj", "1");
+		}
+
+		{
+			pev->health = inv.health;
+			pev->armorvalue = inv.armor;
+			m_iFlashBattery = inv.flashlightBattery;
+
+			// only load inventory once. Then use map inventory after death
+			g_playerInventory.erase(previousInv);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+

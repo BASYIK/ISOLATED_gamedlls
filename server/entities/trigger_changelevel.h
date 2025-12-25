@@ -15,7 +15,7 @@
 
 #pragma once
 #include "triggers.h"
-
+#include "game.h"
 #define SF_CHANGELEVEL_USEONLY		0x0002
 
 class CChangeLevel : public CBaseTrigger
@@ -40,4 +40,5 @@ public:
 	char	m_szLandmarkName[cchMapNameMost];	// trigger_changelevel only:  landmark on next map
 	string_t	m_changeTarget;
 	float	m_changeTargetDelay;
+	bool m_bKeepInventory;
 };

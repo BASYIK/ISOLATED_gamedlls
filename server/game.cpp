@@ -59,6 +59,11 @@ cvar_t	*p_speeds = NULL;
 cvar_t	*g_allow_physx = NULL;
 cvar_t	g_sync_physic = { "sv_sync_physic", "0", FCVAR_ARCHIVE };
 
+std::unordered_map<const char*, player_score_t> g_playerScores;
+std::unordered_map<const char*, player_score_t> g_oldPlayerScores;
+std::unordered_map<const char*, player_inventory_t> g_playerInventory;
+bool g_clearInventoriesNextMap = true;
+
 //CVARS FOR SKILL LEVEL SETTINGS
 // Agrunt
 cvar_t	sk_agrunt_health1 = {"sk_agrunt_health1","0"};

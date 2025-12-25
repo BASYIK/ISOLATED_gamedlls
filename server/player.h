@@ -17,7 +17,7 @@
 
 
 #include "pm_materials.h"
-
+#include "weapon_context.h"
 
 #define PLAYER_FATAL_FALL_SPEED	1024	// approx 60 feet
 #define PLAYER_MAX_SAFE_FALL_SPEED	580	// approx 20 feet
@@ -201,10 +201,10 @@ public:
 	int		m_iClientSndRoomtype;	// client last roomtype set by sound entity
 
 	// usable player items 
-	CBasePlayerItem	*m_rgpPlayerItems[MAX_ITEM_TYPES];
-	CBasePlayerItem	*m_pActiveItem;
-	CBasePlayerItem	*m_pClientActiveItem;  // client version of the active item
-	CBasePlayerItem	*m_pLastItem;
+	EHBasePlayerItem m_rgpPlayerItems[MAX_ITEM_TYPES];
+	EHBasePlayerItem m_pActiveItem;
+	EHBasePlayerItem m_pClientActiveItem;  // client version of the active item
+	EHBasePlayerItem m_pLastItem;
 
 	// don't save restore this
 	EHANDLE		m_hKeyCatchers[MAX_KEYCATCHERS];
@@ -297,6 +297,8 @@ public:
 	BOOL RemovePlayerItem( CBasePlayerItem *pItem );
 	void DropPlayerItem ( char *pszItemName );
 	BOOL HasPlayerItem( CBasePlayerItem *pCheckItem );
+	CBasePlayerItem* GetNamedPlayerItem(const char* pszItemName);
+	CBasePlayerItem* GetPlayerItemById(int id);
 	BOOL HasNamedPlayerItem( const char *pszItemName );
 	BOOL HasWeapons( void );// do I have ANY weapons?
 	void SelectPrevItem( int iItem );
@@ -370,7 +372,26 @@ public:
 	void UpdateHoldableItem( void );
 	void PickHoldableItem( CBaseEntity *pObject );
 	void DropHoldableItem( void );
+	// Saving player data
+	// 
+	// gets player id for saverestore
+	const char* GetPlayerID();
 
+	// get ID assigned by the server (starts at 1, and every new player increments this by 1)
+	int GetUserID();
+
+	// save score to global state
+	void SaveScore();
+
+	// load score from global state, or initialize to 0
+	void LoadScore();
+
+	// save inventory to global state
+	void SaveInventory();
+
+	// equip inventory from global state
+	// returns false if no inventory is saved for this player
+	bool LoadInventory();
 	//Player ID
 	void InitStatusBar( void );
 	void UpdateStatusBar( void );

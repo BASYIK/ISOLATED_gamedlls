@@ -523,7 +523,9 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 	CBaseEntity	*pWeaponEntity = NULL;
 
 	pPlayer->AddWeapon( WEAPON_SUIT );
-	
+
+	bool hasSavedInv = pPlayer->LoadInventory();
+
 	addDefault = TRUE;
 
 	while ( (pWeaponEntity = UTIL_FindEntityByClassname( pWeaponEntity, "game_player_equip" )))
@@ -532,11 +534,14 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 		addDefault = FALSE;
 	}
 
-	if ( addDefault )
-	{
-		pPlayer->GiveNamedItem( "weapon_crowbar" );
-		pPlayer->GiveNamedItem( "weapon_9mmhandgun" );
-		pPlayer->GiveAmmo( 68, "9mm", _9MM_MAX_CARRY );// 4 full reloads
+	if ( !hasSavedInv) {
+
+		if (addDefault)
+		{
+			pPlayer->GiveNamedItem("weapon_crowbar");
+			pPlayer->GiveNamedItem("weapon_9mmhandgun");
+			pPlayer->GiveAmmo(68, "9mm", _9MM_MAX_CARRY);// 4 full reloads
+		}
 	}
 }
 

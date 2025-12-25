@@ -70,6 +70,7 @@ CBaseEntity
 #include "exportdef.h"
 #include <cstring>
 
+class CBasePlayerWeapon;
 // C functions for external declarations that call the appropriate C++ methods
 
 extern "C" EXPORT int GetEntityAPI( DLL_FUNCTIONS *pFunctionTable, int interfaceVersion );
@@ -414,6 +415,7 @@ public:
 	virtual BOOL	IsTriggered( CBaseEntity *pActivator ) {return TRUE;}
 	virtual CBaseMonster *MyMonsterPointer( void ) { return NULL;}
 	virtual CSquadMonster *MySquadMonsterPointer( void ) { return NULL;}
+	virtual CBasePlayerWeapon* GetWeaponPtr(void) { return NULL; };
 	virtual CBaseEntity *GetVehicleDriver( void ) { return NULL; }
 	virtual int	GetToggleState( void ) { return TS_AT_TOP; }
 	virtual void	AddPoints( int score, BOOL bAllowNegativeScore ) {}

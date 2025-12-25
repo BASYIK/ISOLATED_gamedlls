@@ -88,10 +88,8 @@ public:
 
 	virtual int UpdateClientData( CBasePlayer *pPlayer ) { return 0; }
 
-	virtual CBasePlayerItem *GetWeaponPtr( void ) { return NULL; };
-
 	CBasePlayer	*m_pPlayer;
-	CBasePlayerItem	*m_pNext;
+	EHBasePlayerItem m_pNext;
 
 	virtual int	iItemSlot() = 0;
 	virtual int	iItemPosition() = 0;
@@ -133,7 +131,7 @@ public:
 	virtual void Holster(void) override { m_pWeaponContext->Holster(); };
 
 	void UpdateItemInfo( void ) override {};	// updates HUD state
-	CBasePlayerItem *GetWeaponPtr( void ) override { return (CBasePlayerItem *)this; };
+	virtual CBasePlayerWeapon*GetWeaponPtr(void) { return this; };
 	void RetireWeapon( void );
 
 	int iItemSlot() override		{ return m_pWeaponContext->iItemSlot(); }
@@ -244,8 +242,8 @@ public:
 	BOOL HasWeapon( CBasePlayerItem *pCheckItem );
 	BOOL PackWeapon( CBasePlayerItem *pWeapon );
 	BOOL PackAmmo( int iszName, int iCount );
-	
-	CBasePlayerItem	*m_rgpPlayerItems[MAX_ITEM_TYPES];// one slot for each 
+
+	EHBasePlayerItem m_rgpPlayerItems[MAX_ITEM_TYPES];// one slot for each 
 
 	int m_rgiszAmmo[MAX_AMMO_SLOTS];// ammo names
 	int m_rgAmmo[MAX_AMMO_SLOTS];// ammo quantities

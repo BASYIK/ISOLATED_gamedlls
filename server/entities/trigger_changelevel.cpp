@@ -62,6 +62,11 @@ void CChangeLevel :: KeyValue( KeyValueData *pkvd )
 		m_changeTargetDelay = atof( pkvd->szValue );
 		pkvd->fHandled = TRUE;
 	}
+	else if (FStrEq(pkvd->szKeyName, "keep_inventory"))
+	{
+		m_bKeepInventory = atoi(pkvd->szValue) != 0;
+		pkvd->fHandled = TRUE;
+	}
 	else
 		CBaseTrigger::KeyValue( pkvd );
 }
@@ -137,25 +142,23 @@ void CChangeLevel :: ChangeLevelNow( CBaseEntity *pActivator )
 
 	ASSERT(!FStrEq(m_szMapName, ""));
 
-	// Don't work in deathmatch
-	if ( g_pGameRules->IsDeathmatch() )
+	if (!IS_MAP_VALID(m_szMapName)) {
+		UTIL_ClientPrintAll(print_center, UTIL_VarArgs("Next map not found:\n%s", m_szMapName));
+		ALERT(at_error, UTIL_VarArgs("Next map not found: %s\n", m_szMapName));
+		UTIL_Remove(this); // don't keep checking the disk (lag)
 		return;
+	}
 
 	// Some people are firing these multiple times in a frame, disable
-	if ( gpGlobals->time == pev->dmgtime )
+	if (gpGlobals->time == pev->dmgtime)
 		return;
 
 	pev->dmgtime = gpGlobals->time;
 
+	// TODO: this may fail
+	CBaseEntity* pPlayer = CBaseEntity::Instance(g_engfuncs.pfnPEntityOfEntIndex(1));
 
-	CBaseEntity *pPlayer = CBaseEntity::Instance( INDEXENT( 1 ) );
 	if( !pPlayer ) return;
-
-	if ( !InTransitionVolume( pPlayer, m_szLandmarkName ) )
-	{
-		ALERT( at_aiconsole, "Player isn't in the transition volume %s, aborting\n", m_szLandmarkName );
-		return;
-	}
 
 	// Create an entity to fire the changetarget
 	if ( m_changeTarget )
@@ -176,18 +179,11 @@ void CChangeLevel :: ChangeLevelNow( CBaseEntity *pActivator )
 
 	m_hActivator = pActivator;
 	SUB_UseTargets( pActivator, USE_TOGGLE, 0 );
-	st_szNextSpot[0] = 0;	// Init landmark to NULL
 
-	// look for a landmark entity		
-	pentLandmark = FindLandmark( m_szLandmarkName );
-	if ( !FNullEnt( pentLandmark ) )
-	{
-		strcpy(st_szNextSpot, m_szLandmarkName);
-		gpGlobals->vecLandmarkOffset = VARS(pentLandmark)->origin;
+	if (m_bKeepInventory) {
+		g_clearInventoriesNextMap = false;
 	}
-//	ALERT( at_console, "Level touches %d levels\n", ChangeList( levels, 16 ) );
-	ALERT( at_console, "CHANGE LEVEL: %s %s\n", st_szNextMap, st_szNextSpot );
-	CHANGE_LEVEL( st_szNextMap, st_szNextSpot );
+	CHANGE_LEVEL(st_szNextMap, NULL);
 }
 
 //
