@@ -9,6 +9,7 @@
 void CHud :: Init( void )
 {
 	InitHUDMessages();
+	m_pZoomSpeed = gEngfuncs.pfnRegisterVariable("cl_zoomspeed", "100", 0);
 
 	m_Ammo.Init();
 	m_Health.Init();
@@ -161,6 +162,8 @@ void CHud :: VidInit( void )
 			p++;
 		}
 	}
+	m_flFOV = -1; // buz
+	targetFOV = -1; // buz
 
 	// assumption: number_1, number_2, etc, are all listed and loaded sequentially
 	m_HUD_number_0 = GetSpriteIndex( "number_0" );

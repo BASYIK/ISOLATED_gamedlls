@@ -25,7 +25,7 @@ int CHud::UpdateClientData(client_data_t *cdata, float time)
 
 	Think();
 
-	cdata->fov = m_iFOV;
+	cdata->fov = m_flFOV;//m_iFOV; buz
 	v_idlescale = m_iConcussionEffect;
 	CL_ResetButtonBits( m_iKeyBits );
 

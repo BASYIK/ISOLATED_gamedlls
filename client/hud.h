@@ -531,6 +531,9 @@ public:
 	int m_iHideHUDDisplay;
 	bool m_zoomMode;
 	int m_iFOV;
+	float m_flFOV; // buz - that's my FOV!
+	float targetFOV;
+	cvar_t* m_pZoomSpeed; // buz
 	int m_Teamplay;
 	int m_iRes;
 	cvar_t *m_pCvarDraw;

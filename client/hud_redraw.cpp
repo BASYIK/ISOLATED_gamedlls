@@ -28,6 +28,7 @@ int grgLogoFrame[MAX_LOGO_FRAMES] =
 void CHud::Think( void )
 {
 	HUDLIST *pList = m_pHudList;
+	static float lasttime = 0;
 
 	while( pList )
 	{
@@ -35,6 +36,53 @@ void CHud::Think( void )
 			pList->p->Think();
 		pList = pList->pNext;
 	}
+
+
+	
+	targetFOV = default_fov->value;
+
+	static float lastFixedFov = 0;
+
+	if (m_flFOV < 0)
+	{
+		m_flFOV = targetFOV;
+		lasttime = gEngfuncs.GetClientTime();
+		lastFixedFov = m_flFOV;
+	}
+	else
+	{
+		float curtime = gEngfuncs.GetClientTime();
+		float mod = targetFOV - m_flFOV;
+		if (mod < 0) mod *= -1;
+		if (mod < 30) mod = 30;
+
+		if (lastFixedFov == 30)
+			mod *= 2;
+		mod /= 30;
+
+		if (m_flFOV < targetFOV)
+		{
+			m_flFOV += (curtime - lasttime) * m_pZoomSpeed->value * mod;
+			if (m_flFOV > targetFOV)
+			{
+				m_flFOV = targetFOV;
+				lastFixedFov = m_flFOV;
+			}
+		}
+		else if (m_flFOV > targetFOV)
+		{
+			m_flFOV -= (curtime - lasttime) * m_pZoomSpeed->value * mod;
+
+			if (m_flFOV < targetFOV)
+			{
+				m_flFOV = targetFOV;
+				lastFixedFov = m_flFOV;
+			}
+		}
+		lasttime = curtime;
+	}
+
+	m_iFOV = m_flFOV;
 
 	if (m_iFOV == 0 || !m_zoomMode)
 	{

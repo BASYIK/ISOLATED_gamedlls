@@ -54,18 +54,34 @@ int CGlockWeaponContext::GetItemInfo(ItemInfo *p) const
 
 bool CGlockWeaponContext::Deploy( )
 {
-	// pev->body = 1;
-	return DefaultDeploy( "models/v_9mmhandgun.mdl", "models/p_9mmhandgun.mdl", GLOCK_DRAW, "onehanded" );
+	return DefaultDeploy( "models/ins2/wpn/g17/v_g17.mdl", "models/ins2/wpn/g17/p_g17.mdl", DRAW, "onehanded" );
 }
 
 void CGlockWeaponContext::SecondaryAttack( void )
 {
-	GlockFire( 0.1, 0.2, FALSE );
+	m_flTimeWeaponIdle = m_flNextSecondaryAttack = m_pLayer->GetWeaponTimeBase(UsePredicting()) + 0.2;
+	m_flNextPrimaryAttack = m_pLayer->GetWeaponTimeBase(UsePredicting()) + 0.13;
+
+	switch (m_iADSMode)
+	{
+		case IRON_OUT:
+		{
+			SendWeaponAnim((m_iClip > 0) ? IRON_TO : IRON_TO_EMPTY);
+			AimOn(49);
+			break;
+		}
+		case IRON_IN:
+		{
+			SendWeaponAnim((m_iClip > 0) ? IRON_FROM : IRON_FROM_EMPTY);
+			AimOff();
+			break;
+		}
+	}
 }
 
 void CGlockWeaponContext::PrimaryAttack( void )
 {
-	GlockFire( 0.01, 0.3, TRUE );
+	GlockFire( 0.035, 0.3, TRUE );
 }
 
 void CGlockWeaponContext::GlockFire( float flSpread , float flCycleTime, bool fUseAutoAim )
@@ -75,6 +91,7 @@ void CGlockWeaponContext::GlockFire( float flSpread , float flCycleTime, bool fU
 		if (m_fFireOnEmpty)
 		{
 			PlayEmptySound();
+			SendWeaponAnim(m_iADSMode == IRON_IN ? IRON_DRYFIRE : DRYFIRE);
 			m_flNextPrimaryAttack = GetNextPrimaryAttackDelay(0.2f);
 		}
 
@@ -83,7 +100,6 @@ void CGlockWeaponContext::GlockFire( float flSpread , float flCycleTime, bool fU
 
 	m_iClip--;
 
-	SendWeaponAnim(m_iClip != 0 ? GLOCK_SHOOT : GLOCK_SHOOT_EMPTY);
 
 #ifndef CLIENT_DLL
 	// player "shoot" animation
@@ -114,12 +130,17 @@ void CGlockWeaponContext::GlockFire( float flSpread , float flCycleTime, bool fU
 	}
 
 	Vector vecDir = m_pLayer->FireBullets(1, vecSrc, aimMatrix, 8192, flSpread, BULLET_PLAYER_9MM, m_pLayer->GetRandomSeed());
-	m_flNextPrimaryAttack = GetNextPrimaryAttackDelay(flCycleTime);
-	m_flNextSecondaryAttack = m_pLayer->GetWeaponTimeBase(UsePredicting()) + flCycleTime;
+	m_flNextPrimaryAttack = GetNextPrimaryAttackDelay(0.125f);
+	m_flNextSecondaryAttack = m_pLayer->GetWeaponTimeBase(UsePredicting()) + 0.125f;
+
+	if (m_iADSMode == IRON_IN)
+		SendWeaponAnim((m_iClip > 0) ? (m_pLayer->GetRandomInt(m_pLayer->GetRandomSeed(), 0, 1) == 0 ? IRON_FIRE1 : IRON_FIRE4) : IRON_FIRE_LAST);
+	else
+		SendWeaponAnim((m_iClip > 0) ? (m_pLayer->GetRandomInt(m_pLayer->GetRandomSeed(), 0, 1) == 0 ? FIRE1 : FIRE3) : FIRE_LAST);
 
 	WeaponEventParams params;
 	params.flags = WeaponEventFlags::NotHost;
-	params.eventindex = fUseAutoAim ? m_usFireGlock1 : m_usFireGlock2;
+	params.eventindex = m_iADSMode == IRON_IN ? m_usFireGlock2 : m_usFireGlock1;
 	params.delay = 0.0f;
 	params.origin = vecSrc;
 	params.angles = aimMatrix.GetAngles();
@@ -134,25 +155,27 @@ void CGlockWeaponContext::GlockFire( float flSpread , float flCycleTime, bool fU
 		m_pLayer->PlaybackWeaponEvent(params);
 	}
 
-	m_pLayer->AddPlayerPunchangle(-2.f, 0.f, 0.f);
-
-#ifndef CLIENT_DLL
-	if (!m_iClip && m_pLayer->GetPlayerAmmo(m_iPrimaryAmmoType) <= 0)
-		// HEV suit - indicate out of ammo condition
-		m_pLayer->GetWeaponEntity()->m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
-#endif
-	m_flTimeWeaponIdle = m_pLayer->GetWeaponTimeBase(UsePredicting()) + m_pLayer->GetRandomFloat(m_pLayer->GetRandomSeed(), 10.f, 15.f);
+	m_pLayer->AddPlayerPunchangle(m_pLayer->GetRandomFloat(m_pLayer->GetRandomSeed(), -2.55, -3.6), (m_pLayer->GetRandomFloat(m_pLayer->GetRandomSeed(), 0, 1) < 0.5) ? -0.95f : 1.25f, m_pLayer->GetRandomFloat(m_pLayer->GetRandomSeed(), -0.5, 0.5));
+	m_flTimeWeaponIdle = m_pLayer->GetWeaponTimeBase(UsePredicting()) + 1.0f;
 }
 
 void CGlockWeaponContext::Reload( void )
 {
 	int iResult;
 
-	if (m_iClip == 0)
-		iResult = DefaultReload( 17, GLOCK_RELOAD, 1.5 );
-	else
-		iResult = DefaultReload( 17, GLOCK_RELOAD_NOT_EMPTY, 1.5 );
-
+	if (m_iADSMode == IRON_IN)
+	{
+		SendWeaponAnim((m_iClip > 0) ? IRON_FROM : IRON_FROM_EMPTY);
+		m_pLayer->SetPlayerNextAttackTime(m_pLayer->GetWeaponTimeBase(UsePredicting()) + 0.16f);
+		AimOff();
+	}
+	if (m_pLayer->GetPlayerNextAttackTime() < 0.16f)
+	{
+		if (m_iClip == 0)
+			iResult = DefaultReload(17, RELOAD_EMPTY, 2.75);
+		else
+			iResult = DefaultReload(17, RELOAD, 2.2);
+	}
 	if (iResult)
 	{
 		m_flTimeWeaponIdle = m_pLayer->GetWeaponTimeBase(UsePredicting()) + m_pLayer->GetRandomFloat(m_pLayer->GetRandomSeed(), 10.0f, 15.0f);
@@ -168,26 +191,10 @@ void CGlockWeaponContext::WeaponIdle( void )
 	if (m_flTimeWeaponIdle > m_pLayer->GetWeaponTimeBase(UsePredicting()))
 		return;
 
-	// only idle if the slid isn't back
-	if (m_iClip != 0)
-	{
-		int iAnim;
-		float flRand = m_pLayer->GetRandomFloat(m_pLayer->GetRandomSeed(), 0.0f, 1.0f);
-		if (flRand <= 0.3 + 0 * 0.75)
-		{
-			iAnim = GLOCK_IDLE3;
-			m_flTimeWeaponIdle = m_pLayer->GetWeaponTimeBase(UsePredicting()) + 49.0 / 16;
-		}
-		else if (flRand <= 0.6 + 0 * 0.875)
-		{
-			iAnim = GLOCK_IDLE1;
-			m_flTimeWeaponIdle = m_pLayer->GetWeaponTimeBase(UsePredicting()) + 60.0 / 16.0;
-		}
-		else
-		{
-			iAnim = GLOCK_IDLE2;
-			m_flTimeWeaponIdle = m_pLayer->GetWeaponTimeBase(UsePredicting()) + 40.0 / 16.0;
-		}
-		SendWeaponAnim( iAnim );
-	}
+	if (m_iADSMode == IRON_IN)
+		SendWeaponAnim((m_iClip > 0) ? IRON_IDLE : IRON_IDLE_EMPTY);
+	else
+		SendWeaponAnim((m_iClip > 0) ? IDLE : IDLE_EMPTY);
+
+	m_flTimeWeaponIdle = m_pLayer->GetWeaponTimeBase(UsePredicting()) + m_pLayer->GetRandomFloat(m_pLayer->GetRandomSeed(), 5.0f, 7.0f);
 }

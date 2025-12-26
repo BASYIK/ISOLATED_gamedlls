@@ -57,7 +57,8 @@ CBaseWeaponContext::CBaseWeaponContext(std::unique_ptr<IWeaponLayer> &&layer) :
 	m_iPlayEmptySound(false),
 	m_iPrimaryAmmoType(0),
 	m_iSecondaryAmmoType(0),
-	m_iId(-1)
+	m_iId(-1),
+	m_WasDrawn(false)
 {
 }
 
@@ -149,6 +150,7 @@ void CBaseWeaponContext::Holster()
 { 
 	m_fInReload = FALSE; // cancel any reload in progress.
 	m_pLayer->DisablePlayerViewmodel();
+	m_iADSMode = IRON_OUT;
 #ifndef CLIENT_DLL
 	m_pLayer->GetWeaponEntity()->m_pPlayer->pev->weaponmodel = 0;
 #endif
@@ -339,3 +341,40 @@ const char *CBaseWeaponContext::pszName() 		{ return CBaseWeaponContext::ItemInf
 int	CBaseWeaponContext::iMaxClip() 				{ return CBaseWeaponContext::ItemInfoArray[ m_iId ].iMaxClip; }
 int	CBaseWeaponContext::iWeight() 				{ return CBaseWeaponContext::ItemInfoArray[ m_iId ].iWeight; }
 int CBaseWeaponContext::iFlags() 				{ return CBaseWeaponContext::ItemInfoArray[ m_iId ].iFlags; }
+
+void CBaseWeaponContext::AimOn(int value) // apply FoV effects on the player
+{
+	m_pLayer->SetPlayerFOV(value);
+	m_iADSMode = IRON_IN;
+}
+
+void CBaseWeaponContext::AimOff() // remove FoV effects from the player
+{
+	m_pLayer->SetPlayerFOV(0.0f); // 0 means reset to default fov
+	m_iADSMode = IRON_OUT;
+}
+
+//Accuracy Cone Modificator
+bool CBaseWeaponContext::VecModAcc(Vector VecCone, float flFlyMod, float flDuckMod, float flMovMod) // accuracy modifier, depends on the player instance
+{
+	//g_Game.AlertMessage( at_console, "Vector Accuracy X1: " + VecCone.x + "\n" + "Vector Accuracy Y1: " + VecCone.y + "\n" + "Vector Accuracy Z1: " + VecCone.z + "\n");
+
+	if (!m_pLayer->CheckPlayerFlag(FL_ONGROUND)) //Player is in the air, not touching the ground
+	{
+		VecCone.x = VecCone.x * flFlyMod;
+	}
+	else if (m_pLayer->CheckPlayerFlag(FL_DUCKING)) //Player is ducking or has the bipod deployed
+	{
+		VecCone.x = VecCone.x * flDuckMod;
+	}
+
+	if (m_iADSMode == IRON_IN)
+		VecCone.x = VecCone.x * 0.85f;
+
+	if (m_pLayer->GetPlayerFOV() < 40)
+		VecCone.x = VecCone.x * 0.75f;
+
+	//g_Game.AlertMessage( at_console, "Vector Accuracy X2: " + VecCone.x + "\n" + "Vector Accuracy Y2: " + VecCone.y + "\n" + "Vector Accuracy Z2: " + VecCone.z + "\n");
+
+	return VecCone.x;
+}

@@ -32,7 +32,7 @@ void CGlockFireEvent::Execute()
 	if (IsEventLocal())
 	{
 		GameEventUtils::SpawnMuzzleflash();
-		gEngfuncs.pEventAPI->EV_WeaponAnimation( ClipEmpty() ? GLOCK_SHOOT_EMPTY : GLOCK_SHOOT, 2 );
+		gEngfuncs.pEventAPI->EV_WeaponAnimation( ClipEmpty() ? FIRE_LAST : FIRE1, 2 );
 	}
 
 	matrix3x3 cameraMatrix(GetAngles());
@@ -45,7 +45,28 @@ void CGlockFireEvent::Execute()
 
 	GameEventUtils::EjectBrass(shellOrigin, GetAngles(), shellVelocity, brassModelIndex, TE_BOUNCE_SHELL);
 	GameEventUtils::FireBullet(m_arguments->entindex, cameraMatrix, GetOrigin(), GetShootDirection(cameraMatrix), 1);
-	gEngfuncs.pEventAPI->EV_PlaySound( GetEntityIndex(), GetOrigin(), CHAN_WEAPON, "weapons/pl_gun3.wav", gEngfuncs.pfnRandomFloat(0.92, 1.0), ATTN_NORM, 0, 98 + gEngfuncs.pfnRandomLong(0, 3));
+	gEngfuncs.pEventAPI->EV_PlaySound( GetEntityIndex(), GetOrigin(), CHAN_WEAPON, "ins2/wpn/g17/shoot.wav", gEngfuncs.pfnRandomFloat(0.92, 1.0), ATTN_NORM, 0, 98 + gEngfuncs.pfnRandomLong(0, 3));
+}
+
+void CGlockFireEvent::ExecuteADS()
+{
+	if (IsEventLocal())
+	{
+		GameEventUtils::SpawnMuzzleflash();
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(ClipEmpty() ? IRON_FIRE_LAST : IRON_FIRE1, 2);
+	}
+
+	matrix3x3 cameraMatrix(GetAngles());
+	Vector up = cameraMatrix.GetUp();
+	Vector right = cameraMatrix.GetRight();
+	Vector forward = cameraMatrix.GetForward();
+	int brassModelIndex = gEngfuncs.pEventAPI->EV_FindModelIndex("models/shell.mdl");
+	Vector shellVelocity = GetVelocity() + right * gEngfuncs.pfnRandomFloat(50, 70) + up * gEngfuncs.pfnRandomFloat(100, 150) + forward * 25.0f;
+	Vector shellOrigin = GetOrigin() + up * -12.0f + forward * 20.0f + right * 4.0f;
+
+	GameEventUtils::EjectBrass(shellOrigin, GetAngles(), shellVelocity, brassModelIndex, TE_BOUNCE_SHELL);
+	GameEventUtils::FireBullet(m_arguments->entindex, cameraMatrix, GetOrigin(), GetShootDirection(cameraMatrix), 1);
+	gEngfuncs.pEventAPI->EV_PlaySound(GetEntityIndex(), GetOrigin(), CHAN_WEAPON, "ins2/wpn/g17/shoot.wav", gEngfuncs.pfnRandomFloat(0.92, 1.0), ATTN_NORM, 0, 98 + gEngfuncs.pfnRandomLong(0, 3));
 }
 
 bool CGlockFireEvent::ClipEmpty() const

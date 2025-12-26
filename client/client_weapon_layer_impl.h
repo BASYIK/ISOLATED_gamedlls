@@ -60,7 +60,9 @@ public:
 	bool ShouldRunFuncs() override;
 	bool IsMultiplayer() override;
 
+	bool CheckPlayerFlag(int flag) override;
 private:
 	CSeededRandomGenerator m_randomGenerator;
 	CWeaponPredictingContext::PlayerState &m_playerState;
+	std::unique_ptr<CBaseWeaponContext> m_pWeaponContext;
 };

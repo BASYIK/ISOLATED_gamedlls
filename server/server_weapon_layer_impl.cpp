@@ -343,3 +343,9 @@ bool CServerWeaponLayerImpl::IsMultiplayer()
 	// and we're loading from save-file. therefore return false as default value.
 	return g_pGameRules ? g_pGameRules->IsMultiplayer() : false;
 }
+
+
+bool CServerWeaponLayerImpl::CheckPlayerFlag(int flag)
+{
+	return FBitSet(m_pWeapon->m_pPlayer->pev->flags, flag);
+}

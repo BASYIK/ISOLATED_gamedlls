@@ -123,4 +123,5 @@ public:
 	virtual void PlaybackWeaponEvent(const WeaponEventParams &params) = 0;
 	virtual bool ShouldRunFuncs() = 0;
 	virtual bool IsMultiplayer() = 0;
+	virtual bool CheckPlayerFlag(int flag) = 0;
 };

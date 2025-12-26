@@ -215,3 +215,8 @@ bool CClientWeaponLayerImpl::IsMultiplayer()
 {
 	return gEngfuncs.GetMaxClients() > 1;
 }
+
+bool CClientWeaponLayerImpl::CheckPlayerFlag(int flag)
+{
+	return FBitSet(m_playerState.flags, flag);
+}

@@ -78,6 +78,11 @@ public:
 #else
 #define EHBasePlayerItem CBasePlayerItem*
 #endif
+enum PARANOIA_IRON_OPTIONS // Iron sights options
+{
+	IRON_OUT = 0,
+	IRON_IN
+};
 
 class CBaseWeaponContext
 {
@@ -128,7 +133,9 @@ public:
 	virtual int	iMaxClip();
 	virtual int	iWeight();
 	virtual	int iFlags();
-
+	virtual void AimOn(int value);
+	virtual void AimOff();
+	bool VecModAcc(Vector VecCone, float flFlyMod, float flDuckMod, float flMovMod); // accuracy modifier, depends on the player instance
 	bool DefaultDeploy( char *szViewModel, char *szWeaponModel, int iAnim, char *szAnimExt, int body = 0 );
 	int DefaultReload( int iClipSize, int iAnim, float fDelay, int body = 0 );
 	void SendWeaponAnim( int iAnim, int body = 0 );  // skiplocal is 1 if client is predicting weapon animations
@@ -157,5 +164,8 @@ public:
 	int	m_iClientWeaponState;			// the last version of the weapon state sent to hud dll (is current weapon, is on target)
 	int	m_fInReload;					// Are we in the middle of a reload;
 	int	m_iDefaultAmmo;					// how much ammo you get when you pick up this weapon as placed by a level designer.
+	int m_iADSMode; //Aim Down Sights mode
+	bool m_WasDrawn; // For new animations
+
 	std::unique_ptr<IWeaponLayer> m_pLayer;
 };

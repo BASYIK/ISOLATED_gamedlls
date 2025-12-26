@@ -65,6 +65,7 @@ public:
 	bool ShouldRunFuncs() override;
 	bool IsMultiplayer() override;
 
+	bool CheckPlayerFlag(int flag) override;
 private:
 	CBasePlayerWeapon *m_pWeapon;
 	CSeededRandomGenerator m_randomGenerator;

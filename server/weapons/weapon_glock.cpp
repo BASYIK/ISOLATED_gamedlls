@@ -32,21 +32,19 @@ void CGlock::Spawn( )
 {
 	pev->classname = MAKE_STRING(CLASSNAME_STR(GLOCK_CLASSNAME)); // hack to allow for old names
 	Precache( );
-	SET_MODEL( edict(), "models/w_9mmhandgun.mdl" );
+	SET_MODEL( edict(), "models/ins2/wpn/g17/w_g17.mdl" );
 	FallInit();// get ready to fall down.
 }
 
 void CGlock::Precache( void )
 {
-	PRECACHE_MODEL("models/v_9mmhandgun.mdl");
-	PRECACHE_MODEL("models/w_9mmhandgun.mdl");
-	PRECACHE_MODEL("models/p_9mmhandgun.mdl");
+	PRECACHE_MODEL("models/ins2/wpn/g17/v_g17.mdl");
+	PRECACHE_MODEL("models/ins2/wpn/g17/w_g17.mdl");
+	PRECACHE_MODEL("models/ins2/wpn/g17/p_g17.mdl");
 	PRECACHE_MODEL("models/shell.mdl"); // brass shell
 
 	PRECACHE_SOUND("items/9mmclip1.wav");
 	PRECACHE_SOUND("items/9mmclip2.wav");
 
-	PRECACHE_SOUND("weapons/pl_gun1.wav"); //silenced handgun
-	PRECACHE_SOUND("weapons/pl_gun2.wav"); //silenced handgun
-	PRECACHE_SOUND("weapons/pl_gun3.wav"); //handgun
+	PRECACHE_SOUND("ins2/wpn/g17/shoot.wav"); //silenced handgun
 }

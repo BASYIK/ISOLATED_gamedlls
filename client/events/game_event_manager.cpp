@@ -57,7 +57,7 @@ void CGameEventManager::RegisterGlockEvents()
 	});
 	gEngfuncs.pfnHookEvent("events/glock2.sc", [](event_args_s *args) {
 		CGlockFireEvent event(args);
-		event.Execute();
+		event.ExecuteADS();
 	});
 }
 

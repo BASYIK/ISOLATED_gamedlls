@@ -24,6 +24,7 @@ public:
 	~CGlockFireEvent() = default;
 
 	void Execute();
+	void ExecuteADS();
 
 private:
 	bool ClipEmpty() const;
