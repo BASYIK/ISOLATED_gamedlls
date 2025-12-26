@@ -43,7 +43,7 @@ Vector CClientWeaponLayerImpl::GetGunPosition()
 
 matrix3x3 CClientWeaponLayerImpl::GetCameraOrientation()
 {
-	return matrix3x3(m_playerState.viewAngles);
+	return matrix3x3(m_playerState.viewAngles + m_playerState.punchAngle);
 }
 
 Vector CClientWeaponLayerImpl::GetViewAngles()
