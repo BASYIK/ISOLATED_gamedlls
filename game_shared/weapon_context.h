@@ -83,7 +83,11 @@ enum PARANOIA_IRON_OPTIONS // Iron sights options
 	IRON_OUT = 0,
 	IRON_IN
 };
-
+enum BIPOD_OPTIONS // Bipod Options
+{
+	BIPOD_UNDEPLOYED = 0,
+	BIPOD_DEPLOYED
+};
 class CBaseWeaponContext
 {
 public:
@@ -118,7 +122,8 @@ public:
 	virtual void Holster();
 	virtual bool IsUseable();
 	virtual bool UsePredicting() { return true; }; // always true because weapon prediction enabled regardless of anything
-	
+
+	virtual Vector GetSpreadVec(void) { return Vector(0, 0, 0); };
 	virtual int GetItemInfo(ItemInfo *p) const { return 0; };	// returns 0 if struct not filled out
 	virtual int	PrimaryAmmoIndex(); 
 	virtual int	SecondaryAmmoIndex(); 
@@ -143,6 +148,7 @@ public:
 	bool CanAttack(float attack_time);
 	bool PlayEmptySound();
 	void ResetEmptySound();
+//	virtual void DeployBipod(int iAnimDeploy, int iAnimUndeploy, int iBodygroup, float flTimer, float flTimer2);
 
 	static ItemInfo ItemInfoArray[ MAX_WEAPONS ];
 	static AmmoInfo AmmoInfoArray[ MAX_AMMO_SLOTS ];
@@ -165,6 +171,8 @@ public:
 	int	m_fInReload;					// Are we in the middle of a reload;
 	int	m_iDefaultAmmo;					// how much ammo you get when you pick up this weapon as placed by a level designer.
 	int m_iADSMode; //Aim Down Sights mode
+	int m_iBipodMode; //Bipod mode
+	int WeaponGLMode; //Grenade Launcher mode
 	bool m_WasDrawn; // For new animations
 
 	std::unique_ptr<IWeaponLayer> m_pLayer;

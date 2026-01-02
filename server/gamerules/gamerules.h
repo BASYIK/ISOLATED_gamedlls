@@ -23,7 +23,7 @@ class CBasePlayerItem;
 class CBasePlayer;
 class CItem;
 class CBasePlayerAmmo;
-
+#include "HashMap.h"
 // weapon respawning return codes
 enum
 {	
@@ -74,7 +74,10 @@ public:
 	virtual BOOL IsTeamplay( void ) { return FALSE; };// is this deathmatch game being played with team rules?
 	virtual BOOL IsCoOp( void ) = 0;// is this a coop game?
 	virtual const char *GetGameDescription( void ) { return "Half-Life"; }  // this is the game name that gets seen in the server browser
-	
+	// CoOp
+	virtual BOOL CoOpCanSpawn(CBasePlayer *pPlayer) { return FALSE; };
+	virtual void CoOpThink() {};
+
 // Client connection/disconnection
 	virtual BOOL ClientConnected( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] ) = 0;// a client just connected to the server (player hasn't spawned yet)
 	virtual void InitHUD( CBasePlayer *pl ) = 0;		// the client dll is ready for updating
@@ -272,6 +275,9 @@ public:
 	virtual BOOL IsDeathmatch( void );
 	virtual BOOL IsCoOp( void );
 
+	// CoOp
+	virtual BOOL CoOpCanSpawn(CBasePlayer *pPlayer);
+	virtual void CoOpThink();
 // Client connection/disconnection
 	// If ClientConnected returns FALSE, the connection is rejected and the user is provided the reason specified in
 	//  svRejectReason
@@ -356,6 +362,8 @@ protected:
 	float m_flIntermissionEndTime;
 	BOOL m_iEndIntermissionButtonHit;
 	void SendMOTDToClient( edict_t *client );
+protected:
+	StringSet SurvivalPlayerData;
 };
 
 extern DLL_GLOBAL CGameRules*	g_pGameRules;

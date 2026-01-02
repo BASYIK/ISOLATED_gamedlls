@@ -25,6 +25,10 @@ int grgLogoFrame[MAX_LOGO_FRAMES] =
 	29, 29, 29, 29, 29, 28, 27, 26, 25, 24, 30, 31 
 };
 
+int g_iGunMode;
+extern vec3_t g_CrosshairAngle; // buz
+vec3_t g_vSpread;
+
 void CHud::Think( void )
 {
 	HUDLIST *pList = m_pHudList;
@@ -37,9 +41,11 @@ void CHud::Think( void )
 		pList = pList->pNext;
 	}
 
-
-	
-	targetFOV = default_fov->value;
+	if (g_iGunMode == 3)
+		targetFOV = 30;
+	else if (g_iGunMode == 1)
+		targetFOV = 60;
+	else targetFOV = default_fov->value;
 
 	static float lastFixedFov = 0;
 
@@ -56,7 +62,7 @@ void CHud::Think( void )
 		if (mod < 0) mod *= -1;
 		if (mod < 30) mod = 30;
 
-		if (lastFixedFov == 30)
+		if (g_iGunMode == 3 || lastFixedFov == 30)
 			mod *= 2;
 		mod /= 30;
 
@@ -149,6 +155,28 @@ int CHud :: Redraw( float flTime, int intermission )
 		SPR_DrawAdditive( i, x, y, NULL );
 	}
 
+	// buz: draw crosshair
+	if ((g_vSpread[0] && g_iGunMode != 3) && gHUD.m_pCvarDraw->value)
+	{
+		int barsize = XRES(g_iGunMode == 1 ? 9 : 6);
+		int hW = ScreenWidth / 2;
+		int hH = ScreenHeight / 2;
+		float mod = (1 / (tan(M_PI / 180 * (m_iFOV / 2))));
+		int dir = ((g_vSpread[0] * hW) / 500) * mod;
+
+		if (g_CrosshairAngle[0] != 0 || g_CrosshairAngle[1] != 0)
+		{
+			hW -= g_CrosshairAngle[1] * (ScreenWidth / m_iFOV);
+			hH -= g_CrosshairAngle[0] * (ScreenWidth / m_iFOV);
+		}
+
+		int c = 255 - (g_vSpread[2] * 0.5);
+
+		FillRGBA(hW - dir - barsize, hH, barsize, 1, 255, c, c, 200);
+		FillRGBA(hW + dir, hH, barsize, 1, 255, c, c, 200);
+		FillRGBA(hW, hH - dir - barsize, 1, barsize, 255, c, c, 200);
+		FillRGBA(hW, hH + dir, 1, barsize, 255, c, c, 200);
+	}
  	return 1;
 }
 

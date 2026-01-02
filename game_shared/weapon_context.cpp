@@ -58,7 +58,9 @@ CBaseWeaponContext::CBaseWeaponContext(std::unique_ptr<IWeaponLayer> &&layer) :
 	m_iPrimaryAmmoType(0),
 	m_iSecondaryAmmoType(0),
 	m_iId(-1),
-	m_WasDrawn(false)
+	m_WasDrawn(false),
+	m_iADSMode(0),
+	m_iBipodMode(0)
 {
 }
 
@@ -344,12 +346,26 @@ int CBaseWeaponContext::iFlags() 				{ return CBaseWeaponContext::ItemInfoArray[
 
 void CBaseWeaponContext::AimOn(int value) // apply FoV effects on the player
 {
+#ifdef CLIENT_DLL
+	if (m_pLayer->ShouldRunFuncs()) {
+		gEngfuncs.pfnPlaySoundByNameAtLocation("ins2/wpn/in1.ogg", 0.8, m_pLayer->GetGunPosition());
+	}
+#else
+	EMIT_SOUND(ENT(m_pLayer->GetWeaponEntity()->m_pPlayer->pev), CHAN_WEAPON, "ins2/wpn/in1.ogg", 0.8, ATTN_NORM);
+#endif
 	m_pLayer->SetPlayerFOV(value);
 	m_iADSMode = IRON_IN;
 }
 
 void CBaseWeaponContext::AimOff() // remove FoV effects from the player
 {
+#ifdef CLIENT_DLL
+	if (m_pLayer->ShouldRunFuncs()) {
+		gEngfuncs.pfnPlaySoundByNameAtLocation("ins2/wpn/out1.ogg", 0.8, m_pLayer->GetGunPosition());
+	}
+#else
+	EMIT_SOUND(ENT(m_pLayer->GetWeaponEntity()->m_pPlayer->pev), CHAN_WEAPON, "ins2/wpn/out1.ogg", 0.8, ATTN_NORM);
+#endif
 	m_pLayer->SetPlayerFOV(0.0f); // 0 means reset to default fov
 	m_iADSMode = IRON_OUT;
 }
@@ -378,3 +394,4 @@ bool CBaseWeaponContext::VecModAcc(Vector VecCone, float flFlyMod, float flDuckM
 
 	return VecCone.x;
 }
+	

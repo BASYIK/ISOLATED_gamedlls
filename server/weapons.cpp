@@ -319,43 +319,20 @@ void W_Precache(void)
 	UTIL_PrecacheOther( "ammo_9mmclip" );
 
 	// mp5
-	UTIL_PrecacheOtherWeapon( "weapon_9mmAR" );
+	UTIL_PrecacheOtherWeapon( "weapon_mp5sd" );
 	UTIL_PrecacheOther( "ammo_9mmAR" );
 	UTIL_PrecacheOther( "ammo_ARgrenades" );
-
-	// python
-	UTIL_PrecacheOtherWeapon( "weapon_357" );
-	UTIL_PrecacheOther( "ammo_357" );
-
-	// gauss
-	UTIL_PrecacheOtherWeapon( "weapon_gauss" );
-	UTIL_PrecacheOther( "ammo_gaussclip" );
 
 	// rpg
 	UTIL_PrecacheOtherWeapon( "weapon_rpg" );
 	UTIL_PrecacheOther( "ammo_rpgclip" );
 
-	// crossbow
-	UTIL_PrecacheOtherWeapon( "weapon_crossbow" );
-	UTIL_PrecacheOther( "ammo_crossbow" );
-
-	// egon
-	UTIL_PrecacheOtherWeapon( "weapon_egon" );
-
-	// tripmine
-	UTIL_PrecacheOtherWeapon( "weapon_tripmine" );
-
-	// satchel charge
-	UTIL_PrecacheOtherWeapon( "weapon_satchel" );
-
 	// hand grenade
 	UTIL_PrecacheOtherWeapon("weapon_handgrenade");
 
-	// squeak grenade
-	UTIL_PrecacheOtherWeapon( "weapon_snark" );
-
-	// hornetgun
-	UTIL_PrecacheOtherWeapon( "weapon_hornetgun" );
+	// glock
+	UTIL_PrecacheOtherWeapon("weapon_ak74");
+	UTIL_PrecacheOther("ammo_ak74clip");
 
 	if ( g_pGameRules->IsDeathmatch() )
 	{
@@ -389,6 +366,18 @@ void W_Precache(void)
 	PRECACHE_SOUND("weapons/bullet_hit2.wav");	// hit by bullet
 
 	PRECACHE_SOUND("items/weapondrop1.wav");// weapon falls to the ground
+
+	PRECACHE_SOUND("weapons/grenade_hit1.wav");//grenade
+	PRECACHE_SOUND("weapons/grenade_hit2.wav");//grenade
+	PRECACHE_SOUND("weapons/grenade_hit3.wav");//grenade
+
+	PRECACHE_SOUND("ins2/wpn/in1.ogg");
+	PRECACHE_SOUND("ins2/wpn/in2.ogg");
+	PRECACHE_SOUND("ins2/wpn/in3.ogg");
+
+	PRECACHE_SOUND("ins2/wpn/out1.ogg");
+	PRECACHE_SOUND("ins2/wpn/out2.ogg");
+	PRECACHE_SOUND("ins2/wpn/out3.ogg");
 
 }
 

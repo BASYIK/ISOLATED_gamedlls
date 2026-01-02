@@ -28,6 +28,7 @@ WEAPON		*gpActiveSel;	// NULL means off, 1 means just the menu bar, otherwise
 WEAPON		*gpLastSel;	// Last weapon menu selection 
 static wrect_t	nullRc;
 WeaponsResource	gWR;
+extern int g_iGunMode; // buz
 
 int WeaponsResource :: HasAmmo( WEAPON *p )
 {
@@ -917,6 +918,16 @@ int CHudAmmo::Draw( float flTime )
 			int iOffset = ( m_pWeapon->rcAmmo2.bottom - m_pWeapon->rcAmmo2.top ) / 8;
 			SPR_DrawAdditive( 0, x, y - iOffset, &m_pWeapon->rcAmmo2 );
 		}
+	}
+	// buz: draw crosshair...
+	if (g_iGunMode == 3)
+	{
+		SPR_Set(m_pWeapon->hZoomedCrosshair, 255, 255, 255);
+		SPR_DrawHoles(0,
+			(ScreenWidth - SPR_Width(m_pWeapon->hZoomedCrosshair, 0)) / 2,
+			(ScreenHeight - SPR_Height(m_pWeapon->hZoomedCrosshair, 0)) / 2,
+			&m_pWeapon->rcZoomedCrosshair);
+		//	SetCrosshair(m_pWeapon->hZoomedCrosshair, m_pWeapon->rcZoomedCrosshair, 255, 255, 255);
 	}
 	return 1;
 }

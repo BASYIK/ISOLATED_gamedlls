@@ -134,6 +134,15 @@ void ClientDisconnect( edict_t *pEdict )
 // called by ClientKill and DeadThink
 void respawn( CBaseEntity *pClient, BOOL fCopyCorpse)
 {
+	CBasePlayer* plr = (CBasePlayer*)GET_PRIVATE(ENT(pClient->pev));
+	edict_t* spawnSpot = g_pGameRules->GetPlayerSpawnSpot(plr);
+
+	if (!g_pGameRules->CoOpCanSpawn(plr))
+	{
+		plr->StartObserver(plr->pev->origin, plr->pev->angles);
+		return;
+	}
+
 	if (gpGlobals->coop || gpGlobals->deathmatch)
 	{
 		if ( fCopyCorpse )
@@ -1751,6 +1760,13 @@ void UpdateClientData ( const struct edict_s *ent, int sendweapons, struct clien
 				memset(&itemInfo, 0, sizeof(itemInfo));
 				weapon->GetItemInfo(&itemInfo);
 
+				Vector vecSpread = weapon->m_pWeaponContext->GetSpreadVec();
+				// buz: spread is very small value to send it on network directly
+				vecSpread = vecSpread * 500;
+				cd->vuser1 = vecSpread;
+
+				// buz: send gun mode for hud indication
+				cd->vuser2.x = weapon->m_pWeaponContext->m_iADSMode;
 				cd->m_iId = itemInfo.iId;
 				cd->vuser3.z = weapon->m_pWeaponContext->m_iSecondaryAmmoType;
 				cd->vuser4.x = weapon->m_pWeaponContext->m_iPrimaryAmmoType;

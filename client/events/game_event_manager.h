@@ -39,4 +39,5 @@ private:
 	void RegisterRPGEvents();
 	void RegisterEgonEvents();
 	void RegisterGaussEvents();
+	void RegisterAK74Events();
 };

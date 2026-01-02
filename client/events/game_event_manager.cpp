@@ -32,6 +32,7 @@ GNU General Public License for more details.
 #include "egon_fire_event.h"
 #include "gauss_fire_event.h"
 #include "gauss_spin_event.h"
+#include "ak74_fire_event.h"
 
 CGameEventManager::CGameEventManager()
 {
@@ -47,6 +48,7 @@ CGameEventManager::CGameEventManager()
 	RegisterRPGEvents();
 	RegisterEgonEvents();
 	RegisterGaussEvents();
+	RegisterAK74Events();
 }
 
 void CGameEventManager::RegisterGlockEvents()
@@ -54,10 +56,6 @@ void CGameEventManager::RegisterGlockEvents()
 	gEngfuncs.pfnHookEvent("events/glock1.sc", [](event_args_s *args) {
 		CGlockFireEvent event(args);
 		event.Execute();
-	});
-	gEngfuncs.pfnHookEvent("events/glock2.sc", [](event_args_s *args) {
-		CGlockFireEvent event(args);
-		event.ExecuteADS();
 	});
 }
 
@@ -83,13 +81,9 @@ void CGameEventManager::RegisterPythonEvents()
 
 void CGameEventManager::RegisterMP5Events()
 {
-	gEngfuncs.pfnHookEvent("events/mp5.sc", [](event_args_s *args) {
+	gEngfuncs.pfnHookEvent("events/mp5sd.sc", [](event_args_s *args) {
 		CMP5FireEvent event(args);
 		event.Execute(false);
-	});
-	gEngfuncs.pfnHookEvent("events/mp52.sc", [](event_args_s *args) {
-		CMP5FireEvent event(args);
-		event.Execute(true);
 	});
 }
 
@@ -165,6 +159,15 @@ void CGameEventManager::RegisterGaussEvents()
 	});
 	gEngfuncs.pfnHookEvent("events/gaussspin.sc", [](event_args_s *args) {
 		CGaussSpinEvent event(args);
+		event.Execute();
+	});
+}
+
+
+void CGameEventManager::RegisterAK74Events()
+{
+	gEngfuncs.pfnHookEvent("events/ak74.sc", [](event_args_s *args) {
+		CAK74FireEvent event(args);
 		event.Execute();
 	});
 }

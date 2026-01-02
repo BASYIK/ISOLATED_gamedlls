@@ -27,8 +27,8 @@
 void Game_AddObjects( void );
 
 extern vec3_t v_origin;
-//extern vec3_t g_vSpread;
-//extern int g_iGunMode;
+extern vec3_t g_vSpread;
+extern int g_iGunMode;
 
 int g_iAlive = 1;
 int r_currentMessageNum = 0;
@@ -114,10 +114,6 @@ void DLLEXPORT HUD_TxferLocalOverrides( struct entity_state_s *state, const stru
 	//g_iUser1 = client->iuser1;
 	//g_iUser2 = client->iuser2;
 	//g_iUser3 = client->iuser3;
-
-	// buz
-	//g_vSpread = client->vuser1;
-	//g_iGunMode = client->iuser4;
 }
 
 /*
@@ -179,6 +175,9 @@ void DLLEXPORT HUD_ProcessPlayerState( struct entity_state_s *dst, const struct 
 	memcpy( &dst->controller[0], &src->controller[0], 4 * sizeof( byte ));
 	memcpy( &dst->blending[0], &src->blending[0], 2 * sizeof( byte ));
 
+	// buz
+	g_vSpread = src->vuser1;
+	g_iGunMode = src->vuser2.x;
 	// Save off some data so other areas of the Client DLL can get to it
 	//cl_entity_t *player = gEngfuncs.GetLocalPlayer();	// Get the local player's index
 	//if ( dst->number == player->index )

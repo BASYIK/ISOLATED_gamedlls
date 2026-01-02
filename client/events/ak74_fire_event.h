@@ -17,11 +17,11 @@ GNU General Public License for more details.
 #include "base_game_event.h"
 #include "matrix.h"
 
-class CGlockFireEvent : public CBaseGameEvent
+class CAK74FireEvent : public CBaseGameEvent
 {
 public:
-	CGlockFireEvent(event_args_t *args);
-	~CGlockFireEvent() = default;
+	CAK74FireEvent(event_args_t *args);
+	~CAK74FireEvent() = default;
 
 	void Execute();
 

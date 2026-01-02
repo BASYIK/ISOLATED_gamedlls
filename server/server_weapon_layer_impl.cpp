@@ -131,7 +131,7 @@ Vector CServerWeaponLayerImpl::GetAutoaimVector(float delta)
 	return gpGlobals->v_forward;
 }
 
-Vector CServerWeaponLayerImpl::FireBullets(int bullets, Vector origin, matrix3x3 orientation, float distance, float spread, int bulletType, uint32_t seed, int damage)
+Vector CServerWeaponLayerImpl::FireBullets(int bullets, Vector origin, matrix3x3 orientation, float distance, Vector spread, int bulletType, uint32_t seed, int damage)
 {
 	float x, y, z;
 	TraceResult tr;
@@ -148,8 +148,8 @@ Vector CServerWeaponLayerImpl::FireBullets(int bullets, Vector origin, matrix3x3
 		z = x * x + y * y;
 
 		Vector vecDir = orientation.GetForward() +
-						x * spread * orientation.GetRight() +
-						y * spread * orientation.GetUp();
+						x * spread.x * orientation.GetRight() +
+						y * spread.y * orientation.GetUp();
 		Vector vecEnd = origin + vecDir * distance;
 
 		SetBits(gpGlobals->trace_flags, FTRACE_MATERIAL_TRACE);
@@ -204,7 +204,7 @@ Vector CServerWeaponLayerImpl::FireBullets(int bullets, Vector origin, matrix3x3
 	}
 
 	ApplyMultiDamage(player->pev, player->pev);
-	return Vector( x * spread, y * spread, 0.0 );
+	return Vector( x * spread.x, y * spread.y, 0.0 );
 }
 
 int CServerWeaponLayerImpl::GetPlayerAmmo(int ammoType)

@@ -57,7 +57,7 @@ Vector CClientWeaponLayerImpl::GetAutoaimVector(float delta)
 	return camera.GetForward(); // stub
 }
 
-Vector CClientWeaponLayerImpl::FireBullets(int bullets, Vector origin, matrix3x3 orientation, float distance, float spread, int bulletType, uint32_t seed, int damage)
+Vector CClientWeaponLayerImpl::FireBullets(int bullets, Vector origin, matrix3x3 orientation, float distance, Vector spread, int bulletType, uint32_t seed, int damage)
 {
 	float x, y, z;
 
@@ -70,7 +70,7 @@ Vector CClientWeaponLayerImpl::FireBullets(int bullets, Vector origin, matrix3x3
 		z = x * x + y * y;
 	}
 
-	return Vector( x * spread, y * spread, 0.0 );
+	return Vector( x * spread.x, y * spread.y, 0.0 );
 }
 
 int CClientWeaponLayerImpl::GetPlayerAmmo(int ammoType)
@@ -139,6 +139,7 @@ void CClientWeaponLayerImpl::SetPlayerNextAttackTime(float value)
 void CClientWeaponLayerImpl::SetPlayerFOV(float value)
 {
 	m_playerState.fov = value;
+	gHUD.targetFOV = value;
 }
 
 float CClientWeaponLayerImpl::GetPlayerFOV()

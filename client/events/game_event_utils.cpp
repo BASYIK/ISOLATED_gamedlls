@@ -40,7 +40,6 @@ void GameEventUtils::FireBullet(int entIndex, const matrix3x3 &camera, const Vec
 	gEngfuncs.pEventAPI->EV_SetSolidPlayers(entIndex - 1);
 	gEngfuncs.pEventAPI->EV_SetTraceHull(2); // 2 is a point hull
 	gEngfuncs.pEventAPI->EV_PlayerTrace(const_cast<float*>(&origin.x), endPos, PM_NORMAL, -1, &tr);
-	CreateTracer(camera, origin, tr.endpos, tracerFreq);
 	gEngfuncs.pEventAPI->EV_PopPMStates();
 }
 

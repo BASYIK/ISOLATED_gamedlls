@@ -1,6 +1,6 @@
 /*
-mp5_fire_event.cpp
-Copyright (C) 2025 SNMetamorph
+glock_fire_event.cpp
+Copyright (C) 2024 SNMetamorph
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -13,31 +13,26 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#include "mp5_fire_event.h"
+#include "ak74_fire_event.h"
 #include "game_event_utils.h"
 #include "hud.h"
 #include "const.h"
 #include "utils.h"
 #include "event_api.h"
 #include "event_args.h"
-#include "weapons/mp5sd.h"
+#include "weapons/ak74.h"
 
-CMP5FireEvent::CMP5FireEvent(event_args_t *args) :
+CAK74FireEvent::CAK74FireEvent(event_args_t *args) :
 	CBaseGameEvent(args)
 {
 }
 
-void CMP5FireEvent::Execute(bool secondary)
-{
-	HandleShot();
-}
-
-void CMP5FireEvent::HandleShot()
+void CAK74FireEvent::Execute()
 {
 	if (IsEventLocal())
 	{
 		GameEventUtils::SpawnMuzzleflash();
-		gEngfuncs.pEventAPI->EV_WeaponAnimation( m_arguments->iparam1 + gEngfuncs.pfnRandomLong(0,2), 2 );
+		gEngfuncs.pEventAPI->EV_WeaponAnimation( m_arguments->iparam1, 0 );
 	}
 
 	matrix3x3 cameraMatrix(GetAngles());
@@ -49,13 +44,16 @@ void CMP5FireEvent::HandleShot()
 	Vector shellOrigin = GetOrigin() + up * -12.0f + forward * 20.0f + right * 4.0f;
 
 	GameEventUtils::EjectBrass(shellOrigin, GetAngles(), shellVelocity, brassModelIndex, TE_BOUNCE_SHELL);
-	GameEventUtils::FireBullet(m_arguments->entindex, cameraMatrix, GetOrigin(), GetShootDirection(cameraMatrix), 2);
-
-	const char *soundName =  "ins2/wpn/mp5sd/shoot.ogg";
-	gEngfuncs.pEventAPI->EV_PlaySound( GetEntityIndex(), GetOrigin(), CHAN_WEAPON, soundName, 1.f, ATTN_NORM, 0, 94 + gEngfuncs.pfnRandomLong(0, 15));
+	GameEventUtils::FireBullet(m_arguments->entindex, cameraMatrix, GetOrigin(), GetShootDirection(cameraMatrix), 1);
+	gEngfuncs.pEventAPI->EV_PlaySound( GetEntityIndex(), GetOrigin(), CHAN_WEAPON, "cof/guns/ak74/shoot.ogg", gEngfuncs.pfnRandomFloat(0.92, 1.0), ATTN_NORM, 0, 98 + gEngfuncs.pfnRandomLong(0, 3));
 }
 
-Vector CMP5FireEvent::GetShootDirection(const matrix3x3 &camera) const
+bool CAK74FireEvent::ClipEmpty() const
+{
+	return m_arguments->bparam1 != 0;
+}
+
+Vector CAK74FireEvent::GetShootDirection(const matrix3x3 &camera) const
 {
 	return camera.GetForward() + m_arguments->fparam1 * camera.GetRight() + m_arguments->fparam2 * camera.GetUp();
 }

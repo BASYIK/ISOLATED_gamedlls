@@ -241,6 +241,8 @@ void CHalfLifeMultiplay :: Think ( void )
 
 	last_frags = frags_remaining;
 	last_time  = time_remaining;
+
+	CoOpThink();
 }
 
 
@@ -262,7 +264,7 @@ BOOL CHalfLifeMultiplay::IsDeathmatch( void )
 //=========================================================
 BOOL CHalfLifeMultiplay::IsCoOp( void )
 {
-	return gpGlobals->coop;
+	return gpGlobals->coop ? TRUE : FALSE;
 }
 
 //=========================================================
@@ -1097,7 +1099,7 @@ BOOL CHalfLifeMultiplay :: FAllowFlashlight( void )
 //=========================================================
 BOOL CHalfLifeMultiplay :: FAllowMonsters( void )
 {
-	return ( allowmonsters.value != 0 );
+	return TRUE;
 }
 
 //=========================================================
@@ -1558,6 +1560,56 @@ void CHalfLifeMultiplay :: SendMOTDToClient( edict_t *client )
 
 	FREE_FILE( aFileList );
 }
-	
+//=========================================================
+// Returns whatever a player can respawn if survival mode is enabled
+//=========================================================
+BOOL CHalfLifeMultiplay::CoOpCanSpawn(CBasePlayer* pPlayer)
+{
+	if (!IsCoOp())
+		return TRUE;
 
+	const char* szID = GETPLAYERAUTHID(pPlayer->edict());
 
+	if (SurvivalPlayerData.hasKey(szID))
+		return FALSE;
+
+	CLIENT_PRINTF(pPlayer->edict(), print_chat, "Survival Mode is enabled, no more respawning allowed.");
+
+	SurvivalPlayerData.put(szID);
+
+	return TRUE;
+}
+
+//=========================================================
+// Reload the server if mp_survival_restart == 1, else just re-spawn all players
+//=========================================================
+void CHalfLifeMultiplay::CoOpThink()
+{
+	if (CountPlayers() == 0)
+		return;
+
+	int iAlivePlayers = 0;
+
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBaseEntity* pPlayer = UTIL_PlayerByIndex(i);
+
+		if (!pPlayer || pPlayer == nullptr)
+			continue;
+
+		if (!IsCoOp())
+		{
+			SurvivalPlayerData.del(GETPLAYERAUTHID(pPlayer->edict()));
+		}
+		else
+		{
+			iAlivePlayers++;
+		}
+	}
+
+	if (IsCoOp() && iAlivePlayers == 0)
+	{
+		SurvivalPlayerData.clear();
+		SERVER_COMMAND("restart\n");
+	}
+}

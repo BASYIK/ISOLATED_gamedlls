@@ -52,37 +52,6 @@ LINK_ENTITY_TO_CLASS( info_texlights, CNullEntity ); // don't complain about Mer
 LINK_ENTITY_TO_CLASS( info_compile_parameters, CNullEntity );
 LINK_ENTITY_TO_CLASS( env_fireball, CNullEntity ); // no env_fireball in beta version
 
-class CBaseDMStart : public CPointEntity
-{
-	DECLARE_CLASS( CBaseDMStart, CPointEntity );
-public:
-	void KeyValue( KeyValueData *pkvd );
-	BOOL IsTriggered( CBaseEntity *pEntity );
-};
-
-// These are the new entry points to entities. 
-LINK_ENTITY_TO_CLASS( info_player_deathmatch, CBaseDMStart );
-LINK_ENTITY_TO_CLASS( info_player_start, CPointEntity );
-LINK_ENTITY_TO_CLASS( info_landmark, CPointEntity );
-
-void CBaseDMStart::KeyValue( KeyValueData *pkvd )
-{
-	if (FStrEq(pkvd->szKeyName, "master"))
-	{
-		pev->netname = ALLOC_STRING(pkvd->szValue);
-		pkvd->fHandled = TRUE;
-	}
-	else
-		CPointEntity::KeyValue( pkvd );
-}
-
-BOOL CBaseDMStart::IsTriggered( CBaseEntity *pEntity )
-{
-	BOOL master = UTIL_IsMasterTriggered( pev->netname, pEntity );
-
-	return master;
-}
-
 // Convenient way to delay removing oneself
 void CBaseEntity :: SUB_Remove( void )
 {
